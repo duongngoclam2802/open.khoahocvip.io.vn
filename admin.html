@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khoahocvip.io.vn Admin Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/admin.js"></script>
+</head>
+<body class="fade-in pb-20 transition-colors duration-300">
+
+  <!-- Navbar -->
+  <nav class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center mb-8">
+    <div class="flex items-center gap-3">
+      <img src="logo.png" alt="Logo" class="w-10 h-10 rounded-xl shadow-lg border-2 border-white object-cover bg-white">
+      <h1 class="text-xl font-bold text-main tracking-tight">Admin Pro</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="btn-theme-toggle" class="p-2 text-muted hover:text-main rounded-full hover:bg-gray-100/10 transition-colors">
+        <i data-lucide="moon" id="theme-icon"></i>
+      </button>
+      <div id="user-info" class="text-sm font-medium text-main hidden md:block"></div>
+      <!-- Manual Activation Button -->
+      <button id="btn-manual-activate" class="hidden btn-secondary !py-2 !px-3 flex items-center gap-2 text-sm border-orange-500/50 text-orange-500 hover:bg-orange-500/10" title="Kích hoạt thủ công cho học viên">
+        <i data-lucide="key" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Kích hoạt KH</span>
+      </button>
+      <button id="btn-login" class="btn-primary flex items-center gap-2">
+        <i data-lucide="log-in" class="w-4 h-4"></i> Đăng nhập Admin
+      </button>
+      <button id="btn-logout" class="btn-secondary hidden flex items-center gap-2">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Đăng xuất
+      </button>
+    </div>
+  </nav>
+
+  <main id="admin-content" class="max-w-[1400px] mx-auto px-4 hidden">
+    
+    <!-- Tab Navigation (Scrollable horizontally on small screens) -->
+    <div class="flex gap-2 mb-6 border-b border-theme pb-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
+      <button class="admin-tab active text-primary font-bold px-4 py-2 border-b-2 border-primary" data-target="dashboard-tab">
+        <i data-lucide="layout-dashboard" class="w-4 h-4 inline-block mr-1"></i> Dashboard
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="whitelist-tab">
+        <i data-lucide="users" class="w-4 h-4 inline-block mr-1"></i> Học viên
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="courses-tab">
+        <i data-lucide="book-open" class="w-4 h-4 inline-block mr-1"></i> Khóa học
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="news-tab">
+        <i data-lucide="newspaper" class="w-4 h-4 inline-block mr-1"></i> Tin tức
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="docs-tab">
+        <i data-lucide="folder-down" class="w-4 h-4 inline-block mr-1"></i> Tài liệu
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="discovery-tab">
+        <i data-lucide="compass" class="w-4 h-4 inline-block mr-1"></i> Khám phá
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="qa-tab">
+        <i data-lucide="message-square" class="w-4 h-4 inline-block mr-1"></i> Hỏi đáp (Duyệt)
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="keys-tab">
+        <i data-lucide="key" class="w-4 h-4 inline-block mr-1"></i> Mã KH
+      </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="ai-pool-tab">
+        <i data-lucide="bot" class="w-4 h-4 inline-block mr-1"></i> AI Pool
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 1. Dashboard Tab -->
+    <!-- ========================================== -->
+    <div id="dashboard-tab" class="tab-content grid grid-cols-1 md:grid-cols-4 gap-6 fade-in">
+      <div class="glass-card p-6 bg-card flex items-center gap-4">
+        <div class="p-4 bg-blue-100 text-blue-600 rounded-2xl"><i data-lucide="users" class="w-8 h-8"></i></div>
+        <div>
+          <p class="text-muted text-sm font-medium">Tổng Học Viên</p>
+          <h3 class="text-3xl font-bold text-main" id="stat-total-users">--</h3>
+        </div>
+      </div>
+      <div class="glass-card p-6 bg-card flex items-center gap-4">
+        <div class="p-4 bg-green-100 text-green-600 rounded-2xl"><i data-lucide="book-open" class="w-8 h-8"></i></div>
+        <div>
+          <p class="text-muted text-sm font-medium">Tổng Khóa Học</p>
+          <h3 class="text-3xl font-bold text-main" id="stat-total-courses">--</h3>
+        </div>
+      </div>
+      <div class="glass-card p-6 bg-card flex items-center gap-4">
+        <div class="p-4 bg-purple-100 text-purple-600 rounded-2xl"><i data-lucide="play-circle" class="w-8 h-8"></i></div>
+        <div>
+          <p class="text-muted text-sm font-medium">Tổng Bài Giảng</p>
+          <h3 class="text-3xl font-bold text-main" id="stat-total-lectures">--</h3>
+        </div>
+      </div>
+      <div class="glass-card p-6 bg-card flex items-center gap-4 border border-orange-200 dark:border-orange-900/50">
+        <div class="p-4 bg-orange-100 text-orange-600 rounded-2xl glow-orange"><i data-lucide="message-square-dashed" class="w-8 h-8"></i></div>
+        <div>
+          <p class="text-muted text-sm font-medium">Hỏi đáp chờ duyệt</p>
+          <h3 class="text-3xl font-bold text-orange-500" id="stat-pending-qa">--</h3>
+        </div>
+      </div>
+
+      <!-- Activity Log Widget -->
+      <div class="md:col-span-4 glass-card p-6 bg-card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-main flex items-center gap-2">
+            <i data-lucide="activity" class="w-5 h-5 text-green-500"></i>
+            Hoạt động gần đây (30 phút qua)
+          </h3>
+          <button id="btn-refresh-activity" class="p-2 text-muted hover:text-main rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Làm mới">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div id="activity-log-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div class="loader mx-auto col-span-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. Whitelist Tab -->
+    <!-- ========================================== -->
+    <div id="whitelist-tab" class="tab-content hidden fade-in grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="space-y-6">
+        <div class="glass-card p-6 bg-card">
+          <h2 class="text-lg font-bold flex items-center gap-2 mb-4 text-main">
+            <i data-lucide="user-plus" class="text-primary"></i> Cấp Quyền & Batch Upload
+          </h2>
+          <p class="text-xs text-muted mb-4">Nhập danh sách email (mỗi dòng 1 email) và ngày hết hạn.</p>
+          
+          <form id="form-whitelist" class="space-y-4">
+            <div>
+              <textarea id="input-emails" rows="4" class="input-glass" placeholder="user1@gmail.com&#10;user2@gmail.com" required></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-muted mb-1">Ngày hết hạn (Tùy chọn)</label>
+              <input type="date" id="input-expiry" class="input-glass text-main">
+            </div>
+            <button type="submit" class="btn-primary w-full flex justify-center items-center gap-2">
+              <i data-lucide="save"></i> Thêm vào Whitelist
+            </button>
+          </form>
+        </div>
+      </div>
+      <div class="space-y-6">
+        <div class="glass-card p-6 bg-card h-full flex flex-col">
+          <h2 class="text-lg font-bold flex items-center gap-2 mb-4 text-main">
+            <i data-lucide="list-checks" class="text-primary"></i> Danh sách Whitelist
+          </h2>
+          <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[500px]" id="whitelist-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. Courses Tab -->
+    <!-- ========================================== -->
+    <div id="courses-tab" class="tab-content hidden fade-in">
+      <div class="glass-card p-6 bg-card">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-bold flex items-center gap-2 text-main">
+            <i data-lucide="library" class="text-primary"></i> Quản lý Khóa Học
+          </h2>
+          <button id="btn-add-course" class="btn-primary flex items-center gap-2 text-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i> Thêm Khóa Mới
+          </button>
+        </div>
+        <div id="courses-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 4. News Tab -->
+    <!-- ========================================== -->
+    <div id="news-tab" class="tab-content hidden fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-1 space-y-6">
+        <div class="glass-card p-6 bg-card">
+          <h2 class="text-lg font-bold mb-4 text-main">Đăng Tin Tức</h2>
+          <form id="form-news" class="space-y-4">
+            <input type="text" id="news-title" class="input-glass" placeholder="Tiêu đề bài viết..." required>
+            <input type="text" id="news-image" class="input-glass" placeholder="URL Ảnh bìa (tùy chọn)">
+            <textarea id="news-content" rows="6" class="input-glass" placeholder="Nội dung bài viết..." required></textarea>
+            <button type="submit" class="btn-primary w-full flex justify-center items-center gap-2">Đăng bài</button>
+          </form>
+        </div>
+      </div>
+      <div class="lg:col-span-2 glass-card p-6 bg-card">
+        <h2 class="text-lg font-bold mb-4 text-main">Bài viết đã đăng</h2>
+        <div id="news-container" class="space-y-4 overflow-y-auto max-h-[600px] custom-scrollbar pr-2"></div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 5. Documents Tab -->
+    <!-- ========================================== -->
+    <div id="docs-tab" class="tab-content hidden fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-1 space-y-6">
+        <div class="glass-card p-6 bg-card">
+          <h2 class="text-lg font-bold mb-4 text-main">Thêm Tài liệu chung</h2>
+          <form id="form-doc" class="space-y-4">
+            <input type="text" id="doc-title" class="input-glass" placeholder="Tên tài liệu..." required>
+            <select id="doc-category" class="input-glass" required>
+              <option value="" disabled selected>Chọn môn học...</option>
+              <option value="Toán">Toán</option>
+              <option value="Lý">Lý</option>
+              <option value="Hóa">Hóa</option>
+              <option value="Văn">Văn</option>
+              <option value="Anh">Anh</option>
+              <option value="Sinh">Sinh</option>
+              <option value="Sử">Sử</option>
+              <option value="Địa">Địa</option>
+              <option value="HSA">HSA</option>
+              <option value="TSA">TSA</option>
+              <option value="VATC">VATC</option>
+              <option value="SPT">SPT</option>
+            </select>
+            <div class="flex gap-2">
+              <input type="text" id="doc-url" class="input-glass" placeholder="URL tải xuống..." required>
+              <label class="btn-secondary !px-3 cursor-pointer flex items-center">
+                <i data-lucide="upload"></i>
+                <input type="file" id="upload-doc-input" class="hidden">
+              </label>
+            </div>
+            <div id="upload-doc-progress" class="hidden h-1 bg-theme rounded-full"><div class="h-full bg-blue-500 w-0 transition-all"></div></div>
+            <button type="submit" class="btn-primary w-full flex justify-center items-center gap-2">Thêm tài liệu</button>
+          </form>
+        </div>
+      </div>
+      <div class="lg:col-span-2 glass-card p-6 bg-card">
+        <h2 class="text-lg font-bold mb-4 text-main">Thư viện Tài liệu</h2>
+        <div id="docs-container" class="space-y-3 overflow-y-auto max-h-[600px] custom-scrollbar pr-2"></div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 6. Discovery Tab -->
+    <!-- ========================================== -->
+    <div id="discovery-tab" class="tab-content hidden fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-1 space-y-6">
+        <div class="glass-card p-6 bg-card">
+          <h2 class="text-lg font-bold mb-4 text-main">Thêm Khám Phá</h2>
+          <form id="form-discovery" class="space-y-4">
+            <input type="text" id="discovery-title" class="input-glass" placeholder="Tiêu đề..." required>
+            <input type="text" id="discovery-url" class="input-glass" placeholder="Link (Youtube, Bài báo...)" required>
+            <input type="text" id="discovery-image" class="input-glass" placeholder="Link ảnh bìa...">
+            <textarea id="discovery-desc" rows="3" class="input-glass" placeholder="Mô tả ngắn..."></textarea>
+            <button type="submit" class="btn-primary w-full flex justify-center items-center gap-2">Đăng nội dung</button>
+          </form>
+        </div>
+      </div>
+      <div class="lg:col-span-2 glass-card p-6 bg-card">
+        <h2 class="text-lg font-bold mb-4 text-main">Nội dung Khám phá</h2>
+        <div id="discovery-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[600px] custom-scrollbar pr-2"></div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 7. Q&A Tab (Duyệt câu hỏi) -->
+    <!-- ========================================== -->
+    <div id="qa-tab" class="tab-content hidden fade-in">
+      <div class="glass-card p-6 bg-card">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 class="text-lg font-bold flex items-center gap-2 text-main">
+            <i data-lucide="message-square-dashed" class="text-orange-500"></i> Quản lý Hỏi Đáp (Q&A)
+          </h2>
+          <div class="flex items-center gap-3 flex-wrap">
+            <label class="flex items-center gap-2 text-sm font-medium text-main cursor-pointer">
+              <input type="checkbox" id="qa-select-all" class="w-4 h-4 accent-orange-500 cursor-pointer">
+              Chọn tất cả
+            </label>
+            <button id="btn-batch-approve" class="btn-primary !py-1.5 !px-4 text-sm flex items-center gap-2 opacity-50 cursor-not-allowed" disabled>
+              <i data-lucide="check-check" class="w-4 h-4"></i> Duyệt đã chọn
+            </button>
+            <button id="btn-batch-delete" class="btn-secondary !py-1.5 !px-4 text-sm flex items-center gap-2 text-red-500 opacity-50 cursor-not-allowed" disabled>
+              <i data-lucide="trash-2" class="w-4 h-4"></i> Xóa đã chọn
+            </button>
+          </div>
+        </div>
+        <div id="qa-container" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 8. Activation Keys Tab -->
+    <!-- ========================================== -->
+    <div id="keys-tab" class="tab-content hidden fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- LEFT: Tạo mã mới -->
+        <div class="glass-card p-6 bg-card space-y-6">
+          <h2 class="text-lg font-bold flex items-center gap-2 text-main">
+            <i data-lucide="key" class="text-primary w-5 h-5"></i> Tạo Mã Kích Hoạt
+          </h2>
+
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Tiền tố mã (Prefix)</label>
+            <input type="text" id="key-prefix" class="input-glass" placeholder="VD: TOAN12, KHV, VIP2K9" value="KHV">
+            <p class="text-xs text-muted mt-1">Mã sẽ được tạo dạng: <span id="key-preview" class="font-mono text-primary">KHV-XXXXXXXX</span></p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Số lượng mã cần tạo</label>
+            <input type="number" id="key-quantity" class="input-glass" value="1" min="1" max="100">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Ghi chú (tùy chọn)</label>
+            <input type="text" id="key-note" class="input-glass" placeholder="VD: Tặng CTV tháng 4, học sinh nghèo...">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-3">Chọn khóa học mở khóa</label>
+            <div id="key-course-checkboxes" class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+              <p class="text-muted text-sm">Đang tải khóa học...</p>
+            </div>
+          </div>
+
+          <button id="btn-generate-key" class="btn-primary w-full flex items-center justify-center gap-2 font-bold">
+            <i data-lucide="sparkles" class="w-4 h-4"></i> Tạo Mã Kích Hoạt
+          </button>
+
+          <!-- Result box -->
+          <div id="key-result-box" class="hidden bg-green-500/10 border border-green-500/30 rounded-2xl p-4 space-y-2 relative">
+            <div class="flex justify-between items-center">
+              <p class="text-xs font-bold text-muted uppercase tracking-wider">Mã đã tạo thành công:</p>
+              <button onclick="window.copyAllKeys()" class="text-xs font-bold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded-lg transition-colors">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy tất cả
+              </button>
+            </div>
+            <div id="key-result-list" class="space-y-1"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Danh sách mã -->
+        <div class="glass-card p-6 bg-card flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold flex items-center gap-2 text-main">
+              <i data-lucide="list" class="text-primary w-5 h-5"></i> Danh sách Mã
+            </h2>
+            <button id="btn-refresh-keys" class="p-2 text-muted hover:text-main rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Làm mới">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Filter -->
+          <div class="flex gap-2 mb-4">
+            <button class="key-filter-btn active text-xs font-bold px-3 py-1.5 rounded-full bg-primary text-white" data-filter="all">Tất cả</button>
+            <button class="key-filter-btn text-xs font-bold px-3 py-1.5 rounded-full border border-theme text-muted hover:text-main" data-filter="unused">Chưa dùng</button>
+            <button class="key-filter-btn text-xs font-bold px-3 py-1.5 rounded-full border border-theme text-muted hover:text-main" data-filter="used">Đã dùng</button>
+          </div>
+
+          <div id="keys-container" class="flex-1 space-y-2 overflow-y-auto custom-scrollbar max-h-[520px] pr-1">
+            <div class="loader mx-auto mt-8"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 9. AI Key Pool Tab                         -->
+    <!-- ========================================== -->
+    <div id="ai-pool-tab" class="tab-content hidden fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+        <!-- LEFT: Add Keys -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="glass-card p-6 bg-card">
+            <h2 class="text-lg font-bold flex items-center gap-2 text-main mb-1">
+              <i data-lucide="bot" class="w-5 h-5 text-purple-500"></i> Quản lý AI Key Pool
+            </h2>
+            <p class="text-xs text-muted mb-5 leading-relaxed">Dán nhiều Gemini API Key vào đây (mỗi dòng 1 key). Hệ thống sẽ xoay vòng và tự động vô hiệu hóa key lỗi.</p>
+
+            <!-- Stats bar -->
+            <div class="grid grid-cols-3 gap-3 mb-5">
+              <div class="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+                <p class="text-2xl font-black text-green-500" id="ai-pool-active-count">--</p>
+                <p class="text-[10px] font-bold text-green-600 uppercase tracking-wider mt-0.5">Active</p>
+              </div>
+              <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+                <p class="text-2xl font-black text-red-500" id="ai-pool-expired-count">--</p>
+                <p class="text-[10px] font-bold text-red-500 uppercase tracking-wider mt-0.5">Expired</p>
+              </div>
+              <div class="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 text-center">
+                <p class="text-2xl font-black text-purple-500" id="ai-pool-total-count">--</p>
+                <p class="text-[10px] font-bold text-purple-500 uppercase tracking-wider mt-0.5">Tổng</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Dán API Keys (mỗi dòng 1 key)</label>
+                <textarea id="ai-pool-keys-input" rows="8" class="input-glass font-mono text-xs"
+                  placeholder="AIzaSyXXXXXXXXXXXXXXXXXXXXXXXX&#10;AIzaSyYYYYYYYYYYYYYYYYYYYYYYYY&#10;AIzaSyZZZZZZZZZZZZZZZZZZZZZZZZ"
+                  spellcheck="false" autocomplete="off"></textarea>
+                <p class="text-xs text-muted mt-1">Keys đã tồn tại sẽ được bỏ qua (không trùng lặp).</p>
+              </div>
+
+              <button id="btn-save-ai-pool" class="btn-primary w-full flex items-center justify-center gap-2 font-bold">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i> Lưu vào Pool
+              </button>
+            </div>
+          </div>
+
+          <!-- Restore expired keys -->
+          <div class="glass-card p-5 bg-card">
+            <h3 class="text-sm font-bold text-main mb-3 flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4 text-blue-500"></i> Khôi phục Key
+            </h3>
+            <p class="text-xs text-muted mb-3">Đặt lại tất cả key "expired" về "active" (dùng khi Google cấp lại quota).</p>
+            <button id="btn-restore-ai-keys" class="w-full flex items-center justify-center gap-2 text-sm font-bold px-4 py-2.5 border border-blue-500/40 text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Khôi phục tất cả Expired
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Key List -->
+        <div class="lg:col-span-3 glass-card p-6 bg-card flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold flex items-center gap-2 text-main">
+              <i data-lucide="list" class="text-purple-500 w-5 h-5"></i> Danh sách Key
+            </h2>
+            <button id="btn-refresh-ai-pool" class="p-2 text-muted hover:text-main rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Làm mới">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Filter -->
+          <div class="flex gap-2 mb-4">
+            <button class="ai-pool-filter active text-xs font-bold px-3 py-1.5 rounded-full bg-purple-500 text-white" data-filter="all">Tất cả</button>
+            <button class="ai-pool-filter text-xs font-bold px-3 py-1.5 rounded-full border border-theme text-muted hover:text-main" data-filter="active">Active</button>
+            <button class="ai-pool-filter text-xs font-bold px-3 py-1.5 rounded-full border border-theme text-muted hover:text-main" data-filter="expired">Expired</button>
+          </div>
+
+          <div id="ai-pool-list" class="flex-1 space-y-2 overflow-y-auto custom-scrollbar max-h-[540px] pr-1">
+            <div class="loader mx-auto mt-8"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Loading Overlay for Login -->
+  <div id="auth-loading" class="fixed inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+    <div class="loader mb-4"></div>
+  </div>
+
+  <!-- Manual Activation Modal -->
+  <div id="modal-manual-activate" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+    <div class="bg-card border border-theme rounded-3xl p-6 w-full max-w-md shadow-2xl">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-bold text-main flex items-center gap-2">
+          <i data-lucide="key" class="w-5 h-5 text-orange-500"></i> Kích hoạt thủ công
+        </h3>
+        <button id="btn-close-manual-modal" class="p-2 text-muted hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-sm text-muted mb-4">Mở khóa khóa học trực tiếp cho học viên mà không cần mã.</p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Email học viên</label>
+          <input type="email" id="manual-activate-email" class="input-glass" placeholder="hocvien@gmail.com">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Chọn khóa học mở khóa</label>
+          <div id="manual-activate-courses" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+            <p class="text-muted text-sm">Đang tải...</p>
+          </div>
+        </div>
+
+        <button id="btn-confirm-manual-activate" class="w-full btn-primary flex items-center justify-center gap-2 font-bold">
+          <i data-lucide="zap" class="w-4 h-4"></i> Kích hoạt ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Course Editor (Reused from before) -->
+  <div id="modal-course" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
+    <div class="glass-card bg-card w-full max-w-6xl h-[95vh] flex flex-col shadow-2xl rounded-3xl overflow-hidden border border-theme">
+      <div class="p-5 border-b border-theme flex justify-between items-center bg-card shrink-0">
+        <h3 class="text-xl font-bold text-main" id="modal-course-title">Chỉnh sửa khóa học</h3>
+        <button id="btn-close-modal" class="text-muted hover:text-red-500 transition-colors bg-gray-100 dark:bg-gray-800 p-2 rounded-full">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-6 bg-slate-50 dark:bg-slate-900/50">
+        <!-- Inside modal fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 glass-card p-6 bg-card rounded-2xl border border-theme">
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Tên Khóa Học</label>
+            <input type="text" id="course-name" class="input-glass" placeholder="VD: Lập trình Web Fullstack">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Thumbnail URL</label>
+            <div class="flex gap-2">
+              <input type="text" id="course-thumbnail" class="input-glass" placeholder="https://...">
+              <label class="btn-secondary !p-2 flex items-center justify-center cursor-pointer" title="Tải ảnh lên">
+                <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                <input type="file" class="hidden" accept="image/*" id="upload-thumbnail-input">
+              </label>
+            </div>
+            <div id="thumbnail-progress" class="h-1 bg-theme rounded-full hidden mt-2"><div class="h-full bg-primary w-0 transition-all"></div></div>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <h4 class="font-bold text-main text-lg uppercase tracking-wider text-muted text-xs">Cấu trúc Bài giảng</h4>
+          <button id="btn-add-topic" class="btn-primary !py-2 text-sm flex items-center gap-1 shadow-md shadow-primary/30">
+            <i data-lucide="folder-plus" class="w-4 h-4"></i> Thêm Chủ đề
+          </button>
+        </div>
+        <div id="topics-editor-container" class="space-y-4"></div>
+      </div>
+
+      <div class="p-5 border-t border-theme bg-card flex justify-end gap-3 shrink-0">
+        <button id="btn-cancel-course" class="btn-secondary font-bold">Hủy</button>
+        <button id="btn-save-course" class="btn-primary flex items-center gap-2 font-bold shadow-lg shadow-primary/30">
+          <i data-lucide="save" class="w-4 h-4"></i> Lưu Khóa Học
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 right-4 glass-card bg-card px-4 py-3 flex items-center gap-3 transform translate-y-20 opacity-0 transition-all z-[100] shadow-xl">
+    <i data-lucide="check-circle" class="text-green-500 w-5 h-5"></i>
+    <span id="toast-message" class="text-sm font-medium text-main">Thành công!</span>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    });
+  </script>
+</body>
+</html>

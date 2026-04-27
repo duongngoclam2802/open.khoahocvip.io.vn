@@ -1,0 +1,28 @@
+{
+  "name": "Khoahocvip - Học Tập Online",
+  "short_name": "Khoahocvip",
+  "description": "Nền tảng học tập thế hệ mới cho học sinh 2K9. Trọn bộ kiến thức chinh phục kỳ thi.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#f97316",
+  "background_color": "#0F172A",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["education"],
+  "prefer_related_applications": false
+}
