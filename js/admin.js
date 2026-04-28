@@ -1896,94 +1896,91 @@ async function loadExams() {
 }
 
 document.getElementById('btn-save-exam').addEventListener('click', async () => {
-  const title = document.getElementById('exam-title').value.trim();
-  if (!title) {
-    showToast('Vui lòng nhập tên đề thi!', true);
-    return;
-  }
-  if (examQuestions.length === 0) {
-    showToast('Vui lòng thêm ít nhất 1 câu hỏi!', true);
-    return;
-  }
-
-  const questions = sanitizeExamQuestions();
-  const validationError = validateExamQuestions(questions);
-  if (validationError) {
-    showToast(validationError, true);
-    return;
-  }
-
-  const duration = Math.max(1, Math.min(300, Number(document.getElementById('exam-duration').value) || 45));
-  const passPercentage = Math.max(0, Math.min(100, Number(document.getElementById('exam-pass-score').value) || 50));
-  const attemptsLimit = Math.max(0, Math.min(20, Number(document.getElementById('exam-attempt-limit').value) || 0));
-  const startAtRaw = document.getElementById('exam-start-at').value;
-  const endAtRaw = document.getElementById('exam-end-at').value;
-  const startAt = startAtRaw ? new Date(startAtRaw).toISOString() : '';
-  const endAt = endAtRaw ? new Date(endAtRaw).toISOString() : '';
-
-  if (startAt && endAt && new Date(startAt) > new Date(endAt)) {
-    showToast('Thời gian đóng đề phải sau thời gian mở đề.', true);
-    return;
-  }
-
   const btn = document.getElementById('btn-save-exam');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang lưu...';
-  lucide.createIcons();
-
-  const nowIso = new Date().toISOString();
-  const rawPdfUrl = document.getElementById('exam-pdf-url').value.trim();
-  const payload = {
-    title,
-    subject: document.getElementById('exam-subject').value,
-    duration,
-    pdfUrl: rawPdfUrl,
-    pdfEmbedUrl: normalizePdfUrl(rawPdfUrl),
-    instructions: document.getElementById('exam-instructions').value.trim(),
-    passPercentage,
-    attemptsLimit,
-    startAt,
-    endAt,
-    status: document.querySelector('input[name="exam-status"]:checked').value,
-    shuffleQuestions: document.getElementById('exam-shuffle-questions').checked,
-    shuffleOptions: document.getElementById('exam-shuffle-options').checked,
-    showResultAfterSubmit: document.getElementById('exam-show-result').checked,
-    allowReviewAfterSubmit: document.getElementById('exam-allow-review').checked,
-    questions,
-    questionCount: questions.length,
-    totalPoints: questions.reduce((sum, question) => sum + normalizeQuestionPoints(question.points), 0),
-    updatedAt: nowIso
-  };
+  const originalHTML = '<i data-lucide="save" class="w-4 h-4"></i> Lưu Đề Thi';
 
   try {
-    const editingId = document.getElementById('exam-editing-id').value;
-    const batch = writeBatch(db);
+    // --- Validation ---
+    const title = document.getElementById('exam-title').value.trim();
+    if (!title) { showToast('Vui lòng nhập tên đề thi!', true); return; }
+    if (examQuestions.length === 0) { showToast('Vui lòng thêm ít nhất 1 câu hỏi!', true); return; }
 
+    const questions = sanitizeExamQuestions();
+    const validationError = validateExamQuestions(questions);
+    if (validationError) { showToast(validationError, true); return; }
+
+    const startAtRaw = document.getElementById('exam-start-at').value;
+    const endAtRaw   = document.getElementById('exam-end-at').value;
+    const startAt = startAtRaw ? new Date(startAtRaw).toISOString() : '';
+    const endAt   = endAtRaw   ? new Date(endAtRaw).toISOString()   : '';
+    if (startAt && endAt && new Date(startAt) > new Date(endAt)) {
+      showToast('Thời gian đóng đề phải sau thời gian mở đề.', true);
+      return;
+    }
+
+    const statusRadio = document.querySelector('input[name="exam-status"]:checked');
+    const statusValue = statusRadio ? statusRadio.value : 'draft';
+
+    // --- Disable button AFTER validation passes ---
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang lưu...';
+    lucide.createIcons();
+
+    // --- Build payload ---
+    const nowIso = new Date().toISOString();
+    const rawPdfUrl = document.getElementById('exam-pdf-url').value.trim();
+    const duration       = Math.max(1, Math.min(300, Number(document.getElementById('exam-duration').value) || 45));
+    const passPercentage = Math.max(0, Math.min(100, Number(document.getElementById('exam-pass-score').value) || 50));
+    const attemptsLimit  = Math.max(0, Math.min(20,  Number(document.getElementById('exam-attempt-limit').value) || 0));
+
+    const payload = {
+      title,
+      subject:               document.getElementById('exam-subject').value,
+      duration,
+      pdfUrl:                rawPdfUrl,
+      pdfEmbedUrl:           normalizePdfUrl(rawPdfUrl),
+      instructions:          document.getElementById('exam-instructions').value.trim(),
+      passPercentage,
+      attemptsLimit,
+      startAt,
+      endAt,
+      status:                statusValue,
+      shuffleQuestions:      document.getElementById('exam-shuffle-questions').checked,
+      shuffleOptions:        document.getElementById('exam-shuffle-options').checked,
+      showResultAfterSubmit: document.getElementById('exam-show-result').checked,
+      allowReviewAfterSubmit:document.getElementById('exam-allow-review').checked,
+      questions,
+      questionCount:         questions.length,
+      totalPoints:           questions.reduce((sum, q) => sum + normalizeQuestionPoints(q.points), 0),
+      updatedAt:             nowIso
+    };
+
+    // --- Save to Firestore ---
+    const editingId = document.getElementById('exam-editing-id').value;
     if (editingId) {
-      const examRef = doc(db, 'exams', editingId);
-      batch.set(examRef, payload, { merge: true });
-      await batch.commit();
+      await setDoc(doc(db, 'exams', editingId), payload, { merge: true });
       showToast('Đã cập nhật đề thi!');
     } else {
-      const examRef = doc(collection(db, 'exams'));
-      payload.createdAt = nowIso;
-      payload.createdBy = currentUser.email;
-      batch.set(examRef, payload);
-      await batch.commit();
+      payload.createdAt  = nowIso;
+      payload.createdBy  = currentUser?.email || '';
+      const newRef = doc(collection(db, 'exams'));
+      await setDoc(newRef, payload);
       showToast('Đã tạo đề thi mới!');
     }
 
     resetExamForm();
     loadExams();
+
   } catch (error) {
-    console.error(error);
-    showToast('Lỗi lưu đề thi! ' + (error.message || ''), true);
+    console.error('Lỗi lưu đề thi:', error);
+    showToast('Lỗi lưu đề thi! ' + (error.message || error), true);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Lưu Đề Thi';
+    btn.innerHTML = originalHTML;
     lucide.createIcons();
   }
 });
+
 
 window.editExam = async (id) => {
   try {
