@@ -1483,19 +1483,14 @@ function validateExamQuestions(questions) {
   for (let i = 0; i < questions.length; i++) {
     const question = questions[i];
     const prefix = `Câu ${i + 1}`;
-    if (!question.text) return `${prefix} chưa có nội dung.`;
+    // Bỏ qua check question.text, optA/B/C/D, s.text vì admin giờ chỉ tạo phiếu đáp án
     if (question.type === 'multiple_choice') {
-      if (!question.optA || !question.optB || !question.optC || !question.optD)
-        return `${prefix} cần đủ 4 đáp án A, B, C, D.`;
       if (!['A', 'B', 'C', 'D'].includes(question.answer))
         return `${prefix} chưa chọn đáp án đúng.`;
     }
     if (question.type === 'true_false') {
       const stmts = question.statements || [];
-      if (stmts.length !== 4) return `${prefix} (Đúng/Sai) phải có đủ 4 phát biểu a/b/c/d.`;
-      for (const s of stmts) {
-        if (!s.text) return `${prefix}: Phát biểu ${s.label} chưa có nội dung.`;
-      }
+      if (stmts.length !== 4) return `${prefix} (Đúng/Sai) phải có đủ 4 ý a/b/c/d.`;
     }
     if (question.type === 'short_answer' && !question.answer) {
       return `${prefix} chưa nhập đáp án ngắn.`;
