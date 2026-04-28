@@ -1610,7 +1610,7 @@ function renderQuestionsEditor() {
           <div class="flex gap-2">
             ${['A', 'B', 'C', 'D'].map(opt => `
               <label class="cursor-pointer">
-                <input type="radio" name="ans-${idx}" value="${opt}" ${q.answer === opt ? 'checked' : ''} data-action="update-answer" data-idx="${idx}" class="sr-only">
+                <input type="radio" name="ans-${q.id}" value="${opt}" ${q.answer === opt ? 'checked' : ''} data-action="update-answer" data-idx="${idx}" class="sr-only">
                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-full border-2 text-xs font-bold transition-colors ${q.answer === opt ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-theme text-muted hover:border-indigo-400'}">${opt}</span>
               </label>
             `).join('')}
@@ -1631,11 +1631,11 @@ function renderQuestionsEditor() {
                 <span class="text-xs font-black text-indigo-600 w-5">Ý ${s.label}</span>
                 <div class="flex gap-1">
                   <label class="cursor-pointer">
-                    <input type="radio" name="stmt-${idx}-${si}" value="Đúng" ${s.answer === 'Đúng' ? 'checked' : ''} data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
+                    <input type="radio" name="stmt-${q.id}-${si}" value="Đúng" ${s.answer === 'Đúng' ? 'checked' : ''} data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
                     <span class="px-2 py-1 rounded border text-[11px] font-bold transition-colors ${s.answer === 'Đúng' ? 'bg-green-100 border-green-400 text-green-700' : 'border-theme text-muted hover:border-green-400'}">Đúng</span>
                   </label>
                   <label class="cursor-pointer">
-                    <input type="radio" name="stmt-${idx}-${si}" value="Sai" ${s.answer === 'Sai' ? 'checked' : ''} data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
+                    <input type="radio" name="stmt-${q.id}-${si}" value="Sai" ${s.answer === 'Sai' ? 'checked' : ''} data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
                     <span class="px-2 py-1 rounded border text-[11px] font-bold transition-colors ${s.answer === 'Sai' ? 'bg-red-100 border-red-400 text-red-700' : 'border-theme text-muted hover:border-red-400'}">Sai</span>
                   </label>
                 </div>
