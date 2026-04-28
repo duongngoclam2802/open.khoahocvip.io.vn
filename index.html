@@ -173,8 +173,22 @@
         }
       }, 300);
     };
+
+    // ===== DARK MODE INIT (run before render to avoid FOUC) =====
+    (function() {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.body && document.body.classList.add('dark');
+      } else if (!saved) {
+        // Auto-detect system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      }
+    })();
   </script>
-  <script type="module" src="js/index.js?v=20260428-6"></script>
+  <script type="module" src="js/index.js?v=20260428-7"></script>
 </head>
 <body class="bg-main text-main flex h-screen overflow-hidden transition-colors duration-500 font-sans">
 

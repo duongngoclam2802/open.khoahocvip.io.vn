@@ -1,9 +1,9 @@
-import { 
+﻿import { 
   auth, db, storage, googleProvider,
   signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
   collection, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc, query, where, writeBatch,
   ref, uploadBytesResumable, getDownloadURL, getDoc, arrayUnion
-} from './firebase-config.js';
+} from './firebase-config.js?v=20260428-3';
 import { supabaseClient } from './supabase-config.js';
 
 // DOM Elements
@@ -24,13 +24,26 @@ const ADMIN_EMAIL = 'duongngoclam28022008@gmail.com';
 
 function hideAdminLoader() {
   if (authLoading) {
-    authLoading.style.display = 'none';
-    authLoading.classList.add('hidden');
+    authLoading.style.opacity = '0';
+    authLoading.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => {
+      authLoading.style.display = 'none';
+      authLoading.classList.add('hidden');
+    }, 300);
   }
 }
 
-// Force-hide loader after 5s if Firebase is slow
-const _adminLoaderTimeout = setTimeout(hideAdminLoader, 5000);
+// Force-hide loader after 8s if Firebase is slow
+const _adminLoaderTimeout = setTimeout(hideAdminLoader, 8000);
+
+// Apply saved theme
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark');
+  }
+})();
 
 // Set persistence FIRST, then register auth listener
 (async () => {
@@ -46,7 +59,7 @@ const _adminLoaderTimeout = setTimeout(hideAdminLoader, 5000);
 
     if (user) {
       if (user.email.toLowerCase() !== ADMIN_EMAIL) {
-        alert("Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p trang quáº£n trá»‹!");
+        alert('Bạn không có quyền truy cập trang quản trị!');
         await signOut(auth);
         return;
       }
@@ -76,8 +89,8 @@ btnLogin.addEventListener('click', async () => {
   try {
     await signInWithPopup(auth, googleProvider); 
   } catch (error) {
-    console.error("Lá»—i Ä‘Äƒng nháº­p:", error);
-    showToast("ÄÄƒng nháº­p tháº¥t báº¡i!", true);
+    console.error('Loi dang nhap:', error);
+    showToast('Dang nhap that bai!', true);
   }
 });
 btnLogout.addEventListener('click', () => { signOut(auth); });
@@ -120,15 +133,19 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
 // LOAD ALL DATA
 // ----------------------------------------------------
 async function loadData() {
-  await Promise.allSettled([
-    loadWhitelist().catch(e => console.error("Lá»—i táº£i Whitelist:", e)),
-    loadCourses().catch(e => console.error("Lá»—i táº£i Courses:", e)),
-    loadNews().catch(e => console.error("Lá»—i táº£i News:", e)),
-    loadDocs().catch(e => console.error("Lá»—i táº£i Docs:", e)),
-    loadDiscovery().catch(e => console.error("Lá»—i táº£i Discovery:", e)),
-    loadQA().catch(e => console.error("Lá»—i táº£i QA:", e)),
-    loadExams().catch(e => console.error("Lá»—i táº£i Exams:", e))
-  ]);
+  try {
+    await Promise.allSettled([
+      loadWhitelist().catch(e => console.error('Lỗi tải Whitelist:', e)),
+      loadCourses().catch(e => console.error('Lỗi tải Courses:', e)),
+      loadNews().catch(e => console.error('Lỗi tải News:', e)),
+      loadDocs().catch(e => console.error('Lỗi tải Docs:', e)),
+      loadDiscovery().catch(e => console.error('Lỗi tải Discovery:', e)),
+      loadQA().catch(e => console.error('Lỗi tải QA:', e)),
+      loadExams().catch(e => console.error('Lỗi tải Exams:', e))
+    ]);
+  } catch(e) {
+    console.error('loadData error:', e);
+  }
 }
 
 // ==========================================
@@ -2112,3 +2129,4 @@ if (btnRefreshExams) {
 }
 
 resetExamForm();
+

@@ -17,7 +17,8 @@
   --shadow-color: rgba(0, 0, 0, 0.05);
 }
 
-.dark {
+.dark,
+html.dark {
   /* Dark Theme — Warm Charcoal */
   --bg-main: #141414;          /* Very dark, neutral charcoal */
   --bg-card: #1f1f1f;          /* Slightly lighter card surface */

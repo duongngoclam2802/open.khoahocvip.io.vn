@@ -241,17 +241,21 @@ async function checkWhitelist(email) {
 
 function updateAuthUI() {
   if (currentUser) {
-    btnLogin.classList.add('hidden');
-    userMenu.classList.remove('hidden');
-    userInfo.textContent = currentUser.email.split('@')[0];
-    userAvatar.textContent = currentUser.email[0].toUpperCase();
-    loginOverlay.classList.remove('opacity-100');
-    setTimeout(() => loginOverlay.classList.add('hidden'), 300);
+    if (btnLogin) btnLogin.classList.add('hidden');
+    if (userMenu) userMenu.classList.remove('hidden');
+    if (userInfo) userInfo.textContent = currentUser.email.split('@')[0];
+    if (userAvatar) userAvatar.textContent = currentUser.email[0].toUpperCase();
+    // Properly fade out login overlay
+    if (loginOverlay) {
+      loginOverlay.classList.add('opacity-0');
+      loginOverlay.classList.remove('opacity-100');
+      setTimeout(() => loginOverlay.classList.add('hidden'), 300);
+    }
   } else {
-    btnLogin.classList.remove('hidden');
-    userMenu.classList.add('hidden');
+    if (btnLogin) btnLogin.classList.remove('hidden');
+    if (userMenu) userMenu.classList.add('hidden');
   }
-  renderExamAuthStatus();
+  if (typeof renderExamAuthStatus === 'function') renderExamAuthStatus();
 }
 
 function openLoginOverlay() {
@@ -304,7 +308,18 @@ async function loadCourses() {
       allCourses.push(data);
     });
     renderCourseGrid();
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error('loadCourses error:', e);
+    // Retry once after 2s if network error
+    setTimeout(async () => {
+      try {
+        const snap2 = await getDocs(collection(db, 'courses'));
+        allCourses = [];
+        snap2.forEach(d => { const data = d.data(); data.id = d.id; allCourses.push(data); });
+        renderCourseGrid();
+      } catch(e2) { console.error('loadCourses retry failed:', e2); }
+    }, 2000);
+  }
 }
 
 async function loadProgress() {
@@ -1022,45 +1037,53 @@ function extractYouTubeID(url) {
 // MULTI-FEATURES LOADERS (News, Docs, Discovery, QA)
 // ----------------------------------------------------
 async function loadNews() {
-  const c = document.getElementById('news-grid'); c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
-  const snap = await getDocs(collection(db, "news")); c.innerHTML = '';
-  if(snap.empty) { c.innerHTML = '<p class="text-muted">Chưa có tin tức.</p>'; return; }
-  snap.forEach(d => {
-    const data = d.data();
-    c.innerHTML += `
-      <div class="glass-card bg-card p-0 rounded-2xl overflow-hidden shadow-md hover:-translate-y-1 transition-transform border border-theme">
-        ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full h-40 object-cover">` : '<div class="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"></div>'}
-        <div class="p-5">
-          <p class="text-[10px] text-muted font-bold uppercase mb-2">${new Date(data.createdAt).toLocaleDateString('vi-VN')}</p>
-          <h3 class="font-bold text-main text-lg mb-2 line-clamp-2">${data.title}</h3>
-          <p class="text-sm text-muted line-clamp-3">${data.content}</p>
+  const c = document.getElementById('news-grid');
+  if (!c) return;
+  c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
+  try {
+    const snap = await getDocs(collection(db, "news"));
+    c.innerHTML = '';
+    if(snap.empty) { c.innerHTML = '<p class="text-muted">Chưa có tin tức.</p>'; return; }
+    snap.forEach(d => {
+      const data = d.data();
+      c.innerHTML += `
+        <div class="glass-card bg-card p-0 rounded-2xl overflow-hidden shadow-md hover:-translate-y-1 transition-transform border border-theme">
+          ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full h-40 object-cover">` : '<div class="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"></div>'}
+          <div class="p-5">
+            <p class="text-[10px] text-muted font-bold uppercase mb-2">${new Date(data.createdAt).toLocaleDateString('vi-VN')}</p>
+            <h3 class="font-bold text-main text-lg mb-2 line-clamp-2">${data.title}</h3>
+            <p class="text-sm text-muted line-clamp-3">${data.content}</p>
+          </div>
         </div>
-      </div>
-    `;
-  });
+      `;
+    });
+  } catch(e) {
+    console.error('loadNews error:', e);
+    c.innerHTML = '<p class="text-red-500 text-center py-4">Lỗi tải tin tức. Vui lòng thử lại.</p>';
+  }
 }
 
 let allDocuments = [];
 let currentDocCategory = 'all';
 
 async function loadDocs() {
-  const c = document.getElementById('docs-list'); 
+  const c = document.getElementById('docs-list');
+  if (!c) return;
   c.innerHTML = '<div class="loader mx-auto"></div>';
   
-  // Only fetch once from Firestore
-  if (allDocuments.length === 0) {
-    try {
-      const snap = await getDocs(collection(db, "documents_global"));
-      snap.forEach(d => {
-        allDocuments.push({ id: d.id, ...d.data() });
-      });
-      // Sort by newest first
-      allDocuments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } catch(e) {
-      console.error(e);
-      c.innerHTML = '<p class="text-red-500 text-center">Lỗi tải tài liệu.</p>';
-      return;
-    }
+  // Always fetch fresh data
+  try {
+    const snap = await getDocs(collection(db, "documents_global"));
+    allDocuments = [];
+    snap.forEach(d => {
+      allDocuments.push({ id: d.id, ...d.data() });
+    });
+    // Sort by newest first
+    allDocuments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } catch(e) {
+    console.error('loadDocs error:', e);
+    c.innerHTML = '<p class="text-red-500 text-center py-4">Lỗi tải tài liệu. Vui lòng thử lại.</p>';
+    return;
   }
 
   renderDocsList();
@@ -1124,24 +1147,33 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function loadDiscovery() {
-  const c = document.getElementById('discovery-grid'); c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
-  const snap = await getDocs(collection(db, "discovery")); c.innerHTML = '';
-  if(snap.empty) { c.innerHTML = '<p class="text-muted">Chưa có nội dung.</p>'; return; }
-  snap.forEach(d => {
-    const data = d.data();
-    c.innerHTML += `
-      <div class="glass-card bg-card rounded-2xl border border-theme overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
-        ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full h-40 object-cover">` : ''}
-        <div class="p-5 flex-1 flex flex-col">
-          <h4 class="font-bold text-main mb-2">${data.title}</h4>
-          <p class="text-sm text-muted mb-4 flex-1">${data.description}</p>
-          <a href="${data.url}" target="_blank" class="text-purple-500 font-bold text-sm hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-4 h-4"></i> Xem chi tiết</a>
+  const c = document.getElementById('discovery-grid');
+  if (!c) return;
+  c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
+  try {
+    const snap = await getDocs(collection(db, "discovery"));
+    c.innerHTML = '';
+    if(snap.empty) { c.innerHTML = '<p class="text-muted">Chưa có nội dung.</p>'; return; }
+    snap.forEach(d => {
+      const data = d.data();
+      c.innerHTML += `
+        <div class="glass-card bg-card rounded-2xl border border-theme overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
+          ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full h-40 object-cover">` : ''}
+          <div class="p-5 flex-1 flex flex-col">
+            <h4 class="font-bold text-main mb-2">${data.title}</h4>
+            <p class="text-sm text-muted mb-4 flex-1">${data.description}</p>
+            <a href="${data.url}" target="_blank" class="text-purple-500 font-bold text-sm hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-4 h-4"></i> Xem chi tiết</a>
+          </div>
         </div>
-      </div>
-    `;
-  });
-  lucide.createIcons();
+      `;
+    });
+    lucide.createIcons();
+  } catch(e) {
+    console.error('loadDiscovery error:', e);
+    c.innerHTML = '<p class="text-red-500 text-center py-4">Lỗi tải nội dung khám phá.</p>';
+  }
 }
+
 
 async function loadQA() {
   const c = document.getElementById('qa-feed'); c.innerHTML = '<div class="loader mx-auto"></div>';
@@ -3462,6 +3494,46 @@ setTimeout(() => {
     activityInterval = setInterval(recordActivity, 5 * 60 * 1000);
   }
 }, 3000);
+
+// ============================================================
+// DARK MODE TOGGLE
+// ============================================================
+function applyTheme(isDark) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark');
+  }
+  // Update icon
+  const icon = document.getElementById('theme-icon');
+  if (icon) {
+    icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+    lucide.createIcons({ root: icon.parentElement });
+  }
+}
+
+// Apply saved theme on load
+(function initTheme() {
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = saved === 'dark' || (!saved && prefersDark);
+  applyTheme(isDark);
+})();
+
+// Wire up toggle button
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('btn-theme-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const isDark = document.body.classList.contains('dark');
+      applyTheme(!isDark);
+      localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+      haptic(5);
+    });
+  }
+});
 
 // ============================================================
 // INIT ALL NEW FEATURES
