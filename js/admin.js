@@ -1,9 +1,10 @@
-﻿import { 
+import { 
   auth, db, storage, googleProvider,
   signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
   collection, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc, query, where, writeBatch,
   ref, uploadBytesResumable, getDownloadURL, getDoc, arrayUnion
 } from './firebase-config.js';
+import { supabaseClient } from './supabase-config.js';
 
 // DOM Elements
 const authLoading = document.getElementById('auth-loading');
@@ -1399,17 +1400,30 @@ function escapeHtml(value = '') {
 }
 
 function createEmptyQuestion(type = 'multiple_choice') {
-  return {
+  const base = {
     id: 'q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     type,
-    text: '',
-    optA: '',
-    optB: '',
-    optC: '',
-    optD: '',
-    answer: type === 'true_false' ? 'Đúng' : type === 'multiple_choice' ? 'A' : '',
-    points: 1
+    text: ''
   };
+  if (type === 'multiple_choice') {
+    // Phần 1: TNKQ — 0,25đ/câu
+    return { ...base, optA: '', optB: '', optC: '', optD: '', answer: 'A', points: 0.25 };
+  }
+  if (type === 'true_false') {
+    // Phần 2: Đúng/Sai 4 ý — 1đ/câu (1ý=0.1, 2ý=0.25, 3ý=0.5, 4ý=1đ)
+    return {
+      ...base,
+      points: 1,
+      statements: [
+        { label: 'a', text: '', answer: 'Đúng' },
+        { label: 'b', text: '', answer: 'Đúng' },
+        { label: 'c', text: '', answer: 'Đúng' },
+        { label: 'd', text: '', answer: 'Đúng' }
+      ]
+    };
+  }
+  // Phần 3: Trả lời ngắn — 0,25đ/câu
+  return { ...base, answer: '', points: 0.25 };
 }
 
 function normalizePdfUrl(url = '') {
@@ -1435,17 +1449,34 @@ function normalizeQuestionPoints(value) {
 }
 
 function sanitizeExamQuestions() {
-  return examQuestions.map((q, idx) => ({
-    id: q.id || `q_${idx + 1}`,
-    type: q.type || 'multiple_choice',
-    text: (q.text || '').trim(),
-    optA: (q.optA || '').trim(),
-    optB: (q.optB || '').trim(),
-    optC: (q.optC || '').trim(),
-    optD: (q.optD || '').trim(),
-    answer: (q.answer || '').trim(),
-    points: normalizeQuestionPoints(q.points)
-  }));
+  return examQuestions.map((q, idx) => {
+    const base = {
+      id: q.id || `q_${idx + 1}`,
+      type: q.type || 'multiple_choice',
+      text: (q.text || '').trim(),
+      points: normalizeQuestionPoints(q.points)
+    };
+    if (base.type === 'multiple_choice') {
+      return {
+        ...base,
+        optA: (q.optA || '').trim(),
+        optB: (q.optB || '').trim(),
+        optC: (q.optC || '').trim(),
+        optD: (q.optD || '').trim(),
+        answer: (q.answer || '').trim()
+      };
+    }
+    if (base.type === 'true_false') {
+      const stmts = (q.statements || []).map(s => ({
+        label: s.label,
+        text: (s.text || '').trim(),
+        answer: s.answer === 'Sai' ? 'Sai' : 'Đúng'
+      }));
+      return { ...base, statements: stmts };
+    }
+    // short_answer
+    return { ...base, answer: (q.answer || '').trim() };
+  });
 }
 
 function validateExamQuestions(questions) {
@@ -1454,11 +1485,17 @@ function validateExamQuestions(questions) {
     const prefix = `Câu ${i + 1}`;
     if (!question.text) return `${prefix} chưa có nội dung.`;
     if (question.type === 'multiple_choice') {
-      if (!question.optA || !question.optB || !question.optC || !question.optD) return `${prefix} cần đủ 4 đáp án A, B, C, D.`;
-      if (!['A', 'B', 'C', 'D'].includes(question.answer)) return `${prefix} chưa chọn đáp án đúng.`;
+      if (!question.optA || !question.optB || !question.optC || !question.optD)
+        return `${prefix} cần đủ 4 đáp án A, B, C, D.`;
+      if (!['A', 'B', 'C', 'D'].includes(question.answer))
+        return `${prefix} chưa chọn đáp án đúng.`;
     }
-    if (question.type === 'true_false' && !['Đúng', 'Sai'].includes(question.answer)) {
-      return `${prefix} phải chọn Đúng hoặc Sai.`;
+    if (question.type === 'true_false') {
+      const stmts = question.statements || [];
+      if (stmts.length !== 4) return `${prefix} (Đúng/Sai) phải có đủ 4 phát biểu a/b/c/d.`;
+      for (const s of stmts) {
+        if (!s.text) return `${prefix}: Phát biểu ${s.label} chưa có nội dung.`;
+      }
     }
     if (question.type === 'short_answer' && !question.answer) {
       return `${prefix} chưa nhập đáp án ngắn.`;
@@ -1529,7 +1566,26 @@ function renderQuestionsEditor() {
   countEl.textContent = `${examQuestions.length} câu`;
 
   if (examQuestions.length === 0) {
-    container.innerHTML = '<p class="text-sm text-muted text-center py-6">Nhấn "Thêm câu" để bắt đầu tạo câu hỏi</p>';
+    container.innerHTML = [
+      '<div class="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 space-y-2 text-xs text-muted">',
+        '<p class="font-black text-indigo-600 text-sm">Thang \u0111i\u1ec3m chu\u1ea9n THPT 2025</p>',
+        '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">',
+          '<div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-theme">',
+            '<p class="font-bold text-blue-600">Ph\u1ea7n 1 \u2014 Tr\u1eafc nghi\u1ec7m</p>',
+            '<p class="mt-1">M\u1eb7c \u0111\u1ecbnh <span class="font-black">0,25\u0111</span>/c\u00e2u</p>',
+          '</div>',
+          '<div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-theme">',
+            '<p class="font-bold text-amber-600">Ph\u1ea7n 2 \u2014 \u0110\u00fang/Sai (4 \u00fd)</p>',
+            '<p class="mt-1">1\u00fd\u2713=0,1\u0111 &middot; 2\u00fd\u2713=0,25\u0111 &middot; 3\u00fd\u2713=0,5\u0111 &middot; 4\u00fd\u2713=full</p>',
+          '</div>',
+          '<div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-theme">',
+            '<p class="font-bold text-green-600">Ph\u1ea7n 3 \u2014 Tr\u1ea3 l\u1eddi ng\u1eafn</p>',
+            '<p class="mt-1">M\u1eb7c \u0111\u1ecbnh <span class="font-black">0,25\u0111</span>/c\u00e2u</p>',
+          '</div>',
+        '</div>',
+      '</div>',
+      '<p class="text-sm text-muted text-center py-4">Nh\u1ea5n "Th\u00eam c\u00e2u" \u0111\u1ec3 b\u1eaft \u0111\u1ea7u t\u1ea1o c\u00e2u h\u1ecfi</p>'
+    ].join('');
     return;
   }
 
@@ -1564,17 +1620,33 @@ function renderQuestionsEditor() {
           </select>
         </div>`;
     } else if (q.type === 'true_false') {
+      // 4 phát biểu độc lập, mỗi ý có radio Đúng/Sai riêng
+      const stmts = (q.statements && q.statements.length === 4)
+        ? q.statements
+        : [{ label: 'a', text: '', answer: 'Đúng' }, { label: 'b', text: '', answer: 'Đúng' }, { label: 'c', text: '', answer: 'Đúng' }, { label: 'd', text: '', answer: 'Đúng' }];
+
       answerHtml = `
-        <div class="flex items-center gap-4 mt-3 flex-wrap">
-          <span class="text-[10px] font-bold text-muted uppercase">Đáp án đúng:</span>
-          <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="tf-${idx}" value="Đúng" ${q.answer === 'Đúng' ? 'checked' : ''} data-action="update-answer" data-idx="${idx}" class="accent-green-500">
-            <span class="text-sm font-medium text-green-600">Đúng</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="tf-${idx}" value="Sai" ${q.answer === 'Sai' ? 'checked' : ''} data-action="update-answer" data-idx="${idx}" class="accent-red-500">
-            <span class="text-sm font-medium text-red-500">Sai</span>
-          </label>
+        <div class="mt-3 space-y-2">
+          <p class="text-[10px] font-bold text-muted uppercase mb-1">Đủ 4 phát biểu — chọn Đúng/Sai cho từng ý:</p>
+          ${stmts.map((s, si) => `
+            <div class="flex items-start gap-2 p-2 bg-white dark:bg-slate-900 rounded-lg border border-theme">
+              <span class="text-xs font-black text-indigo-600 w-5 shrink-0 mt-0.5">${s.label}.</span>
+              <input type="text" value="${escapeHtml(s.text || '')}" class="input-glass !py-1 text-xs flex-1 !rounded-lg"
+                placeholder="Nội dung phát biểu ${s.label}..."
+                data-action="update-stmt-text" data-idx="${idx}" data-si="${si}">
+              <div class="flex gap-1 shrink-0">
+                <label class="flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-md border transition-colors ${s.answer === 'Đúng' ? 'bg-green-100 border-green-400 text-green-700' : 'border-theme text-muted hover:border-green-400'}">
+                  <input type="radio" name="stmt-${idx}-${si}" value="Đúng" ${s.answer === 'Đúng' ? 'checked' : ''}
+                    data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
+                  <span class="text-[11px] font-bold">Đúng</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-md border transition-colors ${s.answer === 'Sai' ? 'bg-red-100 border-red-400 text-red-700' : 'border-theme text-muted hover:border-red-400'}">
+                  <input type="radio" name="stmt-${idx}-${si}" value="Sai" ${s.answer === 'Sai' ? 'checked' : ''}
+                    data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
+                  <span class="text-[11px] font-bold">Sai</span>
+                </label>
+              </div>
+            </div>`).join('')}
         </div>`;
     } else {
       answerHtml = `
@@ -1596,8 +1668,9 @@ function renderQuestionsEditor() {
               <option value="short_answer" ${q.type === 'short_answer' ? 'selected' : ''}>Trả lời ngắn</option>
             </select>
             <div class="flex items-center gap-1 shrink-0">
-              <span class="text-[10px] font-bold text-muted uppercase">Điểm</span>
-              <input type="number" min="0.25" step="0.25" value="${escapeHtml(q.points)}" class="input-glass !py-0.5 text-[10px] w-20" data-action="update-points" data-idx="${idx}">
+              <span class="text-[10px] font-bold text-muted uppercase">Diểm</span>
+              <input type="number" min="0.1" step="0.05" value="${escapeHtml(q.points)}" class="input-glass !py-0.5 text-[10px] w-20" data-action="update-points" data-idx="${idx}">
+              ${q.type === 'true_false' ? '<span class="text-[9px] text-amber-600 font-bold">(1ý→0.1· 2ý→0.25· 3ý→0.5· 4ý=full)</span>' : ''}
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
@@ -1628,6 +1701,13 @@ if (examQuestionsContainer) {
     if (action === 'update-opt') examQuestions[idx]['opt' + e.target.dataset.opt] = e.target.value;
     if (action === 'update-answer') examQuestions[idx].answer = e.target.value;
     if (action === 'update-points') examQuestions[idx].points = e.target.value;
+    // true_false statement text
+    if (action === 'update-stmt-text') {
+      const si = Number(e.target.dataset.si);
+      if (!examQuestions[idx].statements) examQuestions[idx].statements = [];
+      if (!examQuestions[idx].statements[si]) examQuestions[idx].statements[si] = { label: ['a','b','c','d'][si], text: '', answer: 'Đúng' };
+      examQuestions[idx].statements[si].text = e.target.value;
+    }
   });
 
   examQuestionsContainer.addEventListener('change', (e) => {
@@ -1638,13 +1718,12 @@ if (examQuestionsContainer) {
 
     if (action === 'update-type') {
       const nextType = e.target.value;
-      const current = examQuestions[idx];
+      // Always start fresh for the new type to avoid stale data
       examQuestions[idx] = {
         ...createEmptyQuestion(nextType),
-        ...current,
-        type: nextType,
-        answer: nextType === 'true_false' ? 'Đúng' : nextType === 'multiple_choice' ? (['A', 'B', 'C', 'D'].includes(current.answer) ? current.answer : 'A') : (nextType === 'short_answer' ? (current.type === 'short_answer' ? current.answer : '') : current.answer),
-        points: normalizeQuestionPoints(current.points)
+        id: examQuestions[idx].id,
+        text: examQuestions[idx].text || '',
+        points: normalizeQuestionPoints(examQuestions[idx].points)
       };
       renderQuestionsEditor();
       return;
@@ -1652,6 +1731,15 @@ if (examQuestionsContainer) {
 
     if (action === 'update-answer') examQuestions[idx].answer = e.target.value;
     if (action === 'update-points') examQuestions[idx].points = normalizeQuestionPoints(e.target.value);
+    // true_false statement answer (radio Đúng/Sai)
+    if (action === 'update-stmt-ans') {
+      const si = Number(e.target.dataset.si);
+      if (!examQuestions[idx].statements) examQuestions[idx].statements = [];
+      if (!examQuestions[idx].statements[si]) examQuestions[idx].statements[si] = { label: ['a','b','c','d'][si], text: '', answer: 'Đúng' };
+      examQuestions[idx].statements[si].answer = e.target.value;
+      renderQuestionsEditor(); // re-render to update label colors
+      return;
+    }
   });
 
   examQuestionsContainer.addEventListener('click', (e) => {
@@ -1690,28 +1778,42 @@ document.getElementById('exam-pdf-upload').addEventListener('change', async (e) 
   const file = e.target.files[0];
   if (!file) return;
 
+  // Validate: chỉ nhận PDF
+  if (file.type !== 'application/pdf') {
+    showToast('Chỉ hỗ trợ file PDF!', true);
+    e.target.value = '';
+    return;
+  }
+
   const progressWrap = document.getElementById('exam-pdf-progress');
   const progressBar = document.getElementById('exam-pdf-progress-bar');
   progressWrap.classList.remove('hidden');
   progressBar.style.width = '0%';
 
-  const uploadTask = uploadBytesResumable(ref(storage, `exam_pdfs/${Date.now()}_${file.name}`), file);
-  uploadTask.on(
-    'state_changed',
-    (snap) => {
-      progressBar.style.width = `${(snap.bytesTransferred / snap.totalBytes) * 100}%`;
-    },
-    () => {
-      showToast('Lỗi upload PDF', true);
-      progressWrap.classList.add('hidden');
-    },
-    async () => {
-      document.getElementById('exam-pdf-url').value = await getDownloadURL(uploadTask.snapshot.ref);
-      progressWrap.classList.add('hidden');
-      progressBar.style.width = '0%';
-      showToast('Upload PDF thành công!');
-    }
-  );
+  // Upload lên Supabase Storage (bucket: exam-pdfs)
+  const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+  const filePath = `exam_pdfs/${fileName}`;
+
+  const { data, error } = await supabaseClient.storage
+    .from('exam-pdfs')
+    .upload(filePath, file, {
+      onProgress: (percent) => {
+        progressBar.style.width = `${percent}%`;
+      }
+    });
+
+  if (error) {
+    showToast('Lỗi upload PDF: ' + error.message, true);
+    progressWrap.classList.add('hidden');
+    return;
+  }
+
+  // Lấy public URL
+  const { data: urlData } = supabaseClient.storage.from('exam-pdfs').getPublicUrl(filePath);
+  document.getElementById('exam-pdf-url').value = urlData.publicUrl;
+  progressWrap.classList.add('hidden');
+  progressBar.style.width = '0%';
+  showToast('Upload PDF thành công! (Supabase Storage)');
 });
 
 async function loadExams() {

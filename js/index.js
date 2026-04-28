@@ -1701,17 +1701,21 @@ function buildPreparedExamQuestions(examDoc) {
         isCorrect: question.answer === key
       }));
       if (examDoc.shuffleOptions) options = shuffleExamArray(options);
-      return {
-        ...base,
-        options
-      };
+      return { ...base, options };
     }
 
     if (base.type === 'true_false') {
-      return {
-        ...base,
-        correctAnswer: question.answer === 'Sai' ? 'Sai' : 'Đúng'
-      };
+      // Format mới: 4 phát biểu độc lập
+      const stmts = (question.statements || []).map(s => ({
+        label: s.label,
+        text: s.text || '',
+        correctAnswer: s.answer === 'Sai' ? 'Sai' : 'Đúng'
+      }));
+      // Fallback cho dữ liệu cũ (1 câu = 1 đáp án)
+      if (stmts.length === 0) {
+        return { ...base, correctAnswer: question.answer === 'Sai' ? 'Sai' : 'Đúng', statements: [] };
+      }
+      return { ...base, statements: stmts };
     }
 
     const rawAnswers = String(question.answer || '')
@@ -1811,6 +1815,14 @@ function renderExamQuestionsForm() {
   const container = document.getElementById('exam-questions-form');
   if (!container || !activeExamSession) return;
 
+  // ─── Compact Table Mode (khi có PDF đề) ────────────────────────────────────
+  const hasPdf = Boolean(activeExamSession.pdfEmbedUrl || activeExamSession.pdfUrl);
+  if (hasPdf) {
+    renderExamCompactAnswerTable(container);
+    return;
+  }
+
+  // ─── Full Text Mode (khi không có PDF) ─────────────────────────────────────
   container.innerHTML = activeExamSession.questions.map((question, index) => {
     const value = activeExamSession.answers[question.id] ?? '';
 
@@ -1819,22 +1831,59 @@ function renderExamQuestionsForm() {
       answerMarkup = `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
           ${question.options.map((option) => `
-            <label class="flex items-start gap-3 p-3 rounded-2xl border border-theme bg-main cursor-pointer">
+            <label class="flex items-start gap-3 p-3 rounded-2xl border border-theme bg-main cursor-pointer hover:border-indigo-400 transition-colors ${value === option.originalKey ? '!border-indigo-500 bg-indigo-500/5' : ''}">
               <input type="radio" name="exam-${question.id}" value="${escapeExamHtml(option.originalKey)}" ${value === option.originalKey ? 'checked' : ''} data-question-id="${question.id}" class="accent-indigo-500 mt-1">
               <span class="text-sm text-main"><span class="font-black mr-2">${option.originalKey}.</span>${escapeExamHtml(option.label)}</span>
             </label>
           `).join('')}
         </div>`;
     } else if (question.type === 'true_false') {
-      answerMarkup = `
-        <div class="grid grid-cols-2 gap-3 mt-4">
-          ${['Đúng', 'Sai'].map((option) => `
-            <label class="flex items-center gap-3 p-3 rounded-2xl border border-theme bg-main cursor-pointer">
-              <input type="radio" name="exam-${question.id}" value="${option}" ${value === option ? 'checked' : ''} data-question-id="${question.id}" class="accent-indigo-500">
-              <span class="text-sm font-semibold text-main">${option}</span>
-            </label>
-          `).join('')}
-        </div>`;
+      const stmts = question.statements || [];
+      const userObj = (typeof (activeExamSession.answers[question.id]) === 'object' && activeExamSession.answers[question.id] !== null)
+        ? activeExamSession.answers[question.id] : {};
+      if (stmts.length > 0) {
+        // Format mới: 4 phát biểu độc lập
+        answerMarkup = `
+          <div class="mt-4 space-y-2">
+            <p class="text-xs font-bold text-muted uppercase tracking-wider mb-2">Chọn Đúng / Sai cho từng phát biểu:</p>
+            ${stmts.map(s => {
+              const val = userObj[s.label] || '';
+              return `
+                <div class="flex items-center gap-3 p-3 rounded-2xl border border-theme bg-main">
+                  <span class="text-xs font-black text-indigo-600 w-5 shrink-0">${s.label}.</span>
+                  <span class="text-sm text-main flex-1 leading-snug">${escapeExamHtml(s.text)}</span>
+                  <div class="flex gap-2 shrink-0">
+                    <label class="cursor-pointer">
+                      <input type="radio" name="tf4-${question.id}-${s.label}" value="Đúng"
+                        ${val === 'Đúng' ? 'checked' : ''} data-question-id="${question.id}" data-stmt-label="${s.label}"
+                        class="sr-only exam-tf4-radio">
+                      <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer
+                        ${val === 'Đúng' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-theme bg-main text-muted hover:border-emerald-400 hover:text-emerald-600'}">Đúng</span>
+                    </label>
+                    <label class="cursor-pointer">
+                      <input type="radio" name="tf4-${question.id}-${s.label}" value="Sai"
+                        ${val === 'Sai' ? 'checked' : ''} data-question-id="${question.id}" data-stmt-label="${s.label}"
+                        class="sr-only exam-tf4-radio">
+                      <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer
+                        ${val === 'Sai' ? 'bg-rose-500 border-rose-500 text-white' : 'border-theme bg-main text-muted hover:border-rose-400 hover:text-rose-600'}">Sai</span>
+                    </label>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>`;
+      } else {
+        // Fallback: dữ liệu cũ (1 câu = 1 đáp án Đúng/Sai)
+        const value = activeExamSession.answers[question.id] ?? '';
+        answerMarkup = `
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            ${['Đúng', 'Sai'].map((option) => `
+              <label class="flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-colors ${value === option ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600' : 'border-theme bg-main text-main hover:border-indigo-400'}">
+                <input type="radio" name="exam-${question.id}" value="${option}" ${value === option ? 'checked' : ''} data-question-id="${question.id}" class="sr-only">
+                <span class="text-sm font-bold">${option}</span>
+              </label>
+            `).join('')}
+          </div>`;
+      }
     } else {
       answerMarkup = `
         <div class="mt-4">
@@ -1856,12 +1905,209 @@ function renderExamQuestionsForm() {
   }).join('');
 }
 
+// ─── Compact Answer Table (dạng bảng khi có PDF đính kèm) ─────────────────────
+function renderExamCompactAnswerTable(container) {
+  if (!activeExamSession) return;
+
+  const totalQ = activeExamSession.questions.length;
+  const answeredCount = activeExamSession.questions.filter(q => {
+    const v = activeExamSession.answers[q.id];
+    return v !== undefined && v !== null && String(v).trim() !== '';
+  }).length;
+
+  const rows = activeExamSession.questions.map((question, index) => {
+    const value = activeExamSession.answers[question.id] ?? '';
+    const qNum = index + 1;
+
+    let cellsHtml = '';
+
+    if (question.type === 'multiple_choice') {
+      // Nút tròn A / B / C / D
+      cellsHtml = ['A', 'B', 'C', 'D'].map(key => {
+        const isSelected = value === key;
+        return `
+          <td class="py-2 px-1 text-center">
+            <label class="inline-flex items-center justify-center cursor-pointer">
+              <input type="radio" name="compact-exam-${question.id}" value="${key}"
+                ${isSelected ? 'checked' : ''}
+                data-question-id="${question.id}"
+                class="sr-only">
+              <span class="exam-choice-btn ${isSelected ? 'exam-choice-selected' : ''}"
+                data-qid="${question.id}" data-val="${key}">${key}</span>
+            </label>
+          </td>`;
+      }).join('');
+
+    } else if (question.type === 'true_false') {
+      const stmts = question.statements || [];
+      const userObj = (typeof value === 'object' && value !== null) ? value : {};
+
+      if (stmts.length > 0) {
+        // 4 phát biểu độc lập: mỗi ý = 1 row riêng
+        cellsHtml = `<td colspan="4" class="py-1 px-2">
+          <div class="space-y-1">
+            ${stmts.map(s => {
+              const stmtVal = userObj[s.label] || '';
+              return `
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-black text-indigo-500 w-4 shrink-0">${s.label}.</span>
+                  <span class="text-[11px] text-main flex-1 truncate" title="${escapeExamHtml(s.text)}">${escapeExamHtml(s.text)}</span>
+                  <div class="flex gap-1 shrink-0">
+                    <span class="exam-tf4-compact-btn ${stmtVal === 'Đúng' ? 'exam-tf4-compact-yes' : ''}"
+                      data-qid="${question.id}" data-stmt="${s.label}" data-val="Đúng">Đúng</span>
+                    <span class="exam-tf4-compact-btn ${stmtVal === 'Sai' ? 'exam-tf4-compact-no' : ''}"
+                      data-qid="${question.id}" data-stmt="${s.label}" data-val="Sai">Sai</span>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+        </td>`;
+      } else {
+        // Fallback: dữ liệu cũ
+        cellsHtml = `<td colspan="4" class="py-2 px-2">
+          <div class="flex gap-2">
+            ${['Đúng', 'Sai'].map(opt => {
+              const isSelected = value === opt;
+              return `
+                <label class="flex-1 inline-flex items-center justify-center cursor-pointer">
+                  <input type="radio" name="compact-exam-${question.id}" value="${opt}"
+                    ${isSelected ? 'checked' : ''}
+                    data-question-id="${question.id}"
+                    class="sr-only">
+                  <span class="exam-tf-btn ${isSelected ? 'exam-tf-selected' : ''}"
+                    data-qid="${question.id}" data-val="${opt}">${opt}</span>
+                </label>`;
+            }).join('')}
+          </div>
+        </td>`;
+      }
+
+    } else {
+      // Short answer
+      cellsHtml = `<td colspan="4" class="py-1.5 px-2">
+        <input type="text"
+          value="${escapeExamHtml(value)}"
+          data-question-id="${question.id}"
+          placeholder="Nhập đáp án..."
+          class="exam-sa-input">
+      </td>`;
+    }
+
+    // isAnswered cho true_false 4 ý: kiểm tra object
+    const isAnswered = question.type === 'true_false' && question.statements && question.statements.length > 0
+      ? (typeof value === 'object' && value !== null && Object.keys(value).length > 0)
+      : (value !== '' && value !== undefined && value !== null);
+    return `
+      <tr id="exam-q-${question.id}" class="${index % 2 === 0 ? 'bg-indigo-500/3' : ''} hover:bg-indigo-500/8 transition-colors">
+        <td class="py-2 px-3 text-sm font-bold text-main whitespace-nowrap">
+          <span class="flex items-center gap-1.5">
+            ${isAnswered ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>' : '<span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0"></span>'}
+            Câu ${qNum}
+          </span>
+        </td>
+        ${cellsHtml}
+      </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="exam-compact-table-wrap">
+      <div class="exam-compact-header">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold uppercase tracking-widest text-indigo-600">Bảng đáp án</span>
+          <span class="text-xs font-semibold text-muted">${answeredCount}/${totalQ} câu</span>
+        </div>
+        <div class="exam-compact-progress-bar-bg">
+          <div class="exam-compact-progress-bar-fill" style="width:${totalQ ? Math.round(answeredCount/totalQ*100) : 0}%"></div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="exam-compact-table">
+          <thead>
+            <tr>
+              <th class="py-2 px-3 text-left text-xs font-black uppercase tracking-wider text-white">Câu</th>
+              <th class="py-2 px-3 text-center text-xs font-black uppercase tracking-wider text-white w-12">A</th>
+              <th class="py-2 px-3 text-center text-xs font-black uppercase tracking-wider text-white w-12">B</th>
+              <th class="py-2 px-3 text-center text-xs font-black uppercase tracking-wider text-white w-12">C</th>
+              <th class="py-2 px-3 text-center text-xs font-black uppercase tracking-wider text-white w-12">D</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  // Bind click events on choice buttons (span-based for styling)
+  container.querySelectorAll('.exam-choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qid = btn.dataset.qid;
+      const val = btn.dataset.val;
+      if (!activeExamSession || activeExamSession.submitted) return;
+      activeExamSession.answers[qid] = val;
+      updateActiveExamProgress();
+      scheduleExamDraftSave();
+      renderExamCompactAnswerTable(container);
+    });
+  });
+
+  // true_false cũ (1 ý)
+  container.querySelectorAll('.exam-tf-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qid = btn.dataset.qid;
+      const val = btn.dataset.val;
+      if (!activeExamSession || activeExamSession.submitted) return;
+      activeExamSession.answers[qid] = val;
+      updateActiveExamProgress();
+      scheduleExamDraftSave();
+      renderExamCompactAnswerTable(container);
+    });
+  });
+
+  // true_false mới (4 phát biểu độc lập)
+  container.querySelectorAll('.exam-tf4-compact-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qid = btn.dataset.qid;
+      const stmtLabel = btn.dataset.stmt;
+      const val = btn.dataset.val;
+      if (!activeExamSession || activeExamSession.submitted) return;
+      // answers[qid] là object { a: 'Đúng', b: 'Sai', ... }
+      if (!activeExamSession.answers[qid] || typeof activeExamSession.answers[qid] !== 'object') {
+        activeExamSession.answers[qid] = {};
+      }
+      activeExamSession.answers[qid][stmtLabel] = val;
+      updateActiveExamProgress();
+      scheduleExamDraftSave();
+      renderExamCompactAnswerTable(container);
+    });
+  });
+
+  container.querySelectorAll('.exam-sa-input').forEach(input => {
+    let saDebounce;
+    input.addEventListener('input', () => {
+      const qid = input.dataset.questionId;
+      if (!activeExamSession || activeExamSession.submitted) return;
+      activeExamSession.answers[qid] = input.value.trim();
+      clearTimeout(saDebounce);
+      saDebounce = setTimeout(() => {
+        updateActiveExamProgress();
+        scheduleExamDraftSave();
+      }, 400);
+    });
+  });
+}
+
 function renderExamQuestionPalette() {
   const container = document.getElementById('exam-question-palette');
   if (!container || !activeExamSession) return;
 
   container.innerHTML = activeExamSession.questions.map((question, index) => {
-    const answered = activeExamSession.answers[question.id] && String(activeExamSession.answers[question.id]).trim() !== '';
+    const val = activeExamSession.answers[question.id];
+    // true_false 4 ý: check object
+    const answered = question.type === 'true_false' && question.statements && question.statements.length > 0
+      ? (val && typeof val === 'object' && Object.keys(val).length > 0)
+      : (val && String(val).trim() !== '');
     return `
       <button onclick="window.scrollToExamQuestion('${question.id}')" class="aspect-square rounded-xl text-sm font-black border transition-colors ${answered ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-main text-muted border-theme hover:border-indigo-400'}">
         ${index + 1}
@@ -1877,6 +2123,11 @@ function updateActiveExamProgress() {
   if (!activeExamSession) return;
   const answeredCount = activeExamSession.questions.filter((question) => {
     const value = activeExamSession.answers[question.id];
+    // true_false 4 ý: cần ít nhất 1 ý được chọn để tính là đã trả lời
+    if (question.type === 'true_false' && question.statements && question.statements.length > 0) {
+      if (!value || typeof value !== 'object') return false;
+      return Object.keys(value).length > 0;
+    }
     return value !== undefined && value !== null && String(value).trim() !== '';
   }).length;
   const total = activeExamSession.questions.length || 1;
@@ -1929,21 +2180,55 @@ function renderExamResult() {
         </div>
         ${activeExamSession.allowReviewAfterSubmit ? `
           <div class="space-y-3">
-            ${result.breakdown.map((item, index) => `
-              <div class="rounded-2xl border ${item.correct ? 'border-emerald-500/20 bg-emerald-500/6' : 'border-rose-500/20 bg-rose-500/6'} p-4">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-muted mb-2">Câu ${index + 1}</p>
-                    <h4 class="text-sm font-bold text-main leading-relaxed">${escapeExamHtml(item.text)}</h4>
-                  </div>
-                  <span class="text-xs font-black ${item.correct ? 'text-emerald-600' : 'text-rose-600'}">${item.correct ? 'Đúng' : 'Sai'}</span>
-                </div>
+            ${result.breakdown.map((item, index) => {
+              // Xác định màu và trạng thái
+              const hasPartialScore = item.stmtResults && item.earnedPoints > 0 && !item.correct;
+              const borderColor = item.correct
+                ? 'border-emerald-500/20 bg-emerald-500/6'
+                : hasPartialScore
+                  ? 'border-amber-500/20 bg-amber-500/6'
+                  : 'border-rose-500/20 bg-rose-500/6';
+              const statusLabel = item.correct
+                ? '<span class="text-xs font-black text-emerald-600">Đúng hoàn toàn</span>'
+                : hasPartialScore
+                  ? `<span class="text-xs font-black text-amber-600">${item.correctStmts}/${item.totalStmts} ý đúng · ${item.earnedPoints}đ</span>`
+                  : '<span class="text-xs font-black text-rose-600">Chưa đúng</span>';
+
+              // Sub-breakdown cho true_false 4 ý
+              const stmtBreakdown = item.stmtResults ? `
+                <div class="mt-3 space-y-1.5">
+                  ${item.stmtResults.map(s => `
+                    <div class="flex items-center gap-2 text-xs">
+                      <span class="font-black text-indigo-500 w-5">${s.label}.</span>
+                      <span class="flex-1 text-main truncate">${escapeExamHtml(s.text)}</span>
+                      <span class="shrink-0 font-bold ${s.correct ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${s.userAnswer === 'Bỏ trống' ? '—' : s.userAnswer}
+                        ${s.correct ? '✓' : `✗ (${s.correctAnswer})`}
+                      </span>
+                    </div>`).join('')}
+                </div>` : `
                 <div class="mt-3 text-sm text-main space-y-1">
                   <p><span class="font-semibold">Bạn trả lời:</span> ${escapeExamHtml(item.userAnswerDisplay || 'Bỏ trống')}</p>
                   <p><span class="font-semibold">Đáp án đúng:</span> ${escapeExamHtml(item.correctAnswerDisplay)}</p>
-                </div>
-              </div>
-            `).join('')}
+                </div>`;
+
+              return `
+                <div class="rounded-2xl border ${borderColor} p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="text-xs font-bold uppercase tracking-widest text-muted mb-2">Câu ${index + 1}
+                        <span class="ml-1 normal-case font-semibold text-muted">${item.points}đ</span>
+                      </p>
+                      <h4 class="text-sm font-bold text-main leading-relaxed">${escapeExamHtml(item.text)}</h4>
+                    </div>
+                    <div class="shrink-0 text-right">
+                      ${statusLabel}
+                      <p class="text-xs text-muted mt-0.5">${item.earnedPoints}/${item.points}đ</p>
+                    </div>
+                  </div>
+                  ${stmtBreakdown}
+                </div>`;
+            }).join('')}
           </div>` : ''}
       </div>`;
 
@@ -2016,6 +2301,40 @@ function evaluateActiveExam() {
     }
 
     if (question.type === 'true_false') {
+      const stmts = question.statements || [];
+      // Format mới: 4 phát biểu độc lập
+      if (stmts.length > 0) {
+        const userObj = (typeof rawAnswer === 'object' && rawAnswer !== null) ? rawAnswer : {};
+        const stmtResults = stmts.map(s => ({
+          label: s.label,
+          text: s.text,
+          userAnswer: userObj[s.label] || 'Bỏ trống',
+          correct: userObj[s.label] === s.correctAnswer,
+          correctAnswer: s.correctAnswer
+        }));
+        const correctStmts = stmtResults.filter(s => s.correct).length;
+
+        // Thang điểm chuẩn THPT 2025:
+        // đúng 1 ý = 10%, đúng 2 ý = 25%, đúng 3 ý = 50%, đúng 4 ý = 100%
+        const SCORE_RATIOS = [0, 0.1, 0.25, 0.5, 1.0]; // index = số ý đúng
+        const ratio = SCORE_RATIOS[Math.min(correctStmts, 4)];
+        const earnedPoints = Math.round(ratio * question.points * 100) / 100;
+        const allCorrect = correctStmts === stmts.length;
+
+        return {
+          questionId: question.id,
+          text: question.text,
+          correct: allCorrect,
+          points: question.points,
+          earnedPoints,
+          correctStmts,
+          totalStmts: stmts.length,
+          stmtResults,
+          userAnswerDisplay: stmtResults.map(s => `${s.label}: ${s.userAnswer}`).join(' | '),
+          correctAnswerDisplay: stmts.map(s => `${s.label}: ${s.correctAnswer}`).join(' | ')
+        };
+      }
+      // Fallback: dữ liệu cũ (1 câu = 1 đáp án)
       const correct = rawAnswer === question.correctAnswer;
       return {
         questionId: question.id,
@@ -2023,7 +2342,7 @@ function evaluateActiveExam() {
         correct,
         points: question.points,
         earnedPoints: correct ? question.points : 0,
-        userAnswerDisplay: answerDisplay,
+        userAnswerDisplay: String(rawAnswer) || 'Bỏ trống',
         correctAnswerDisplay: question.correctAnswer
       };
     }
@@ -2279,6 +2598,21 @@ if (examFormContainer) {
   const syncAnswer = (target) => {
     const questionId = target.dataset.questionId;
     if (!questionId || !activeExamSession || activeExamSession.submitted) return;
+    // Skip compact mode inputs (handled by click events in renderExamCompactAnswerTable)
+    if (target.name && target.name.startsWith('compact-exam-')) return;
+    // true_false 4 ý: xử lý qua stmt-label
+    if (target.classList.contains('exam-tf4-radio')) {
+      const stmtLabel = target.dataset.stmtLabel;
+      if (!stmtLabel) return;
+      if (!activeExamSession.answers[questionId] || typeof activeExamSession.answers[questionId] !== 'object') {
+        activeExamSession.answers[questionId] = {};
+      }
+      activeExamSession.answers[questionId][stmtLabel] = target.value;
+      updateActiveExamProgress();
+      scheduleExamDraftSave();
+      renderExamQuestionsForm(); // re-render để cập nhật màu nút
+      return;
+    }
     activeExamSession.answers[questionId] = target.type === 'radio' ? target.value : target.value.trim();
     updateActiveExamProgress();
     scheduleExamDraftSave();
