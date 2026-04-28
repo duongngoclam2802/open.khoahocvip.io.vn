@@ -3,7 +3,7 @@ import {
   signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
   collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, writeBatch, arrayUnion, query, where,
   ref, uploadBytesResumable, getDownloadURL
-} from './firebase-config.js?v=20260428-2';
+} from './firebase-config.js?v=20260428-3';
 
 // DOM Auth
 const loginOverlay = document.getElementById('login-overlay');
@@ -285,14 +285,12 @@ const handleLogin = async () => {
   }
 };
 
-if(btnLogin) btnLogin.addEventListener('click', handleLogin);
+window._popupLogin = handleLogin;
+
+if(btnLogin) btnLogin.addEventListener('click', openLoginOverlay);
 if(btnLoginLarge) btnLoginLarge.addEventListener('click', handleLogin);
 if(btnLogout) btnLogout.addEventListener('click', () => signOut(auth));
-if(btnCloseLogin) btnCloseLogin.addEventListener('click', () => {
-  loginOverlay.classList.remove('opacity-100');
-  setTimeout(() => loginOverlay.classList.add('hidden'), 300);
-  pendingLecture = null;
-});
+if(btnCloseLogin) btnCloseLogin.addEventListener('click', closeLoginOverlay);
 
 // ----------------------------------------------------
 // COURSES & STATS
@@ -2847,7 +2845,7 @@ if (photoInput) {
 
         // Update Auth profile
         try {
-          const { updateProfile } = await import('./vendor/firebase-auth.js?v=20260428-1');
+          const { updateProfile } = await import('./vendor/firebase-auth.js');
           await updateProfile(auth.currentUser, { photoURL: url });
         } catch(e) { console.error(e); }
 
