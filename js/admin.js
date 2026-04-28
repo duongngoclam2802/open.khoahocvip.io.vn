@@ -1690,16 +1690,10 @@ if (examQuestionsContainer) {
     if (!action) return;
     const idx = Number(e.target.dataset.idx);
     if (!Number.isInteger(idx) || !examQuestions[idx]) return;
-    if (action === 'update-text') examQuestions[idx].text = e.target.value;
-    if (action === 'update-opt') examQuestions[idx]['opt' + e.target.dataset.opt] = e.target.value;
-    if (action === 'update-answer') examQuestions[idx].answer = e.target.value;
     if (action === 'update-points') examQuestions[idx].points = e.target.value;
-    // true_false statement text
-    if (action === 'update-stmt-text') {
-      const si = Number(e.target.dataset.si);
-      if (!examQuestions[idx].statements) examQuestions[idx].statements = [];
-      if (!examQuestions[idx].statements[si]) examQuestions[idx].statements[si] = { label: ['a','b','c','d'][si], text: '', answer: 'Đúng' };
-      examQuestions[idx].statements[si].text = e.target.value;
+    if (action === 'update-answer' && e.target.type === 'text') {
+      // Cho phần short_answer (nếu có dùng input text)
+      examQuestions[idx].answer = e.target.value;
     }
   });
 
@@ -1722,8 +1716,16 @@ if (examQuestionsContainer) {
       return;
     }
 
-    if (action === 'update-answer') examQuestions[idx].answer = e.target.value;
+    if (action === 'update-answer') {
+      examQuestions[idx].answer = e.target.value;
+      if (e.target.type === 'radio') {
+        renderQuestionsEditor(); // re-render để cập nhật màu span
+      }
+      return;
+    }
+    
     if (action === 'update-points') examQuestions[idx].points = normalizeQuestionPoints(e.target.value);
+    
     // true_false statement answer (radio Đúng/Sai)
     if (action === 'update-stmt-ans') {
       const si = Number(e.target.dataset.si);
