@@ -1467,11 +1467,15 @@ function sanitizeExamQuestions() {
       };
     }
     if (base.type === 'true_false') {
-      const stmts = (q.statements || []).map(s => ({
-        label: s.label,
-        text: (s.text || '').trim(),
-        answer: s.answer === 'Sai' ? 'Sai' : 'Đúng'
-      }));
+      const rawStmts = q.statements || [];
+      const stmts = [0, 1, 2, 3].map(i => {
+        const s = rawStmts[i] || {};
+        return {
+          label: ['a', 'b', 'c', 'd'][i],
+          text: (s.text || '').trim(),
+          answer: s.answer === 'Sai' ? 'Sai' : 'Đúng'
+        };
+      });
       return { ...base, statements: stmts };
     }
     // short_answer
