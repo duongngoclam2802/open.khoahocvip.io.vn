@@ -1605,19 +1605,16 @@ function renderQuestionsEditor() {
     let answerHtml = '';
     if (q.type === 'multiple_choice') {
       answerHtml = `
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-3">
-          ${['A', 'B', 'C', 'D'].map(opt => `
-            <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-black w-4 text-muted">${opt}.</span>
-              <input type="text" value="${escapeHtml(q['opt' + opt] || '')}" class="input-glass !py-1 text-xs flex-1" placeholder="Đáp án ${opt}..." data-action="update-opt" data-idx="${idx}" data-opt="${opt}">
-            </div>
-          `).join('')}
-        </div>
-        <div class="flex items-center gap-2 mt-3">
-          <span class="text-[10px] font-bold text-muted uppercase">Đáp án đúng:</span>
-          <select class="input-glass !py-1 text-xs w-24" data-action="update-answer" data-idx="${idx}">
-            ${['A', 'B', 'C', 'D'].map(opt => `<option value="${opt}" ${q.answer === opt ? 'selected' : ''}>${opt}</option>`).join('')}
-          </select>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="text-xs font-bold text-muted uppercase">Chọn đáp án đúng:</span>
+          <div class="flex gap-2">
+            ${['A', 'B', 'C', 'D'].map(opt => `
+              <label class="cursor-pointer">
+                <input type="radio" name="ans-${idx}" value="${opt}" ${q.answer === opt ? 'checked' : ''} data-action="update-answer" data-idx="${idx}" class="sr-only">
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full border-2 text-xs font-bold transition-colors ${q.answer === opt ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-theme text-muted hover:border-indigo-400'}">${opt}</span>
+              </label>
+            `).join('')}
+          </div>
         </div>`;
     } else if (q.type === 'true_false') {
       // 4 phát biểu độc lập, mỗi ý có radio Đúng/Sai riêng
@@ -1626,27 +1623,24 @@ function renderQuestionsEditor() {
         : [{ label: 'a', text: '', answer: 'Đúng' }, { label: 'b', text: '', answer: 'Đúng' }, { label: 'c', text: '', answer: 'Đúng' }, { label: 'd', text: '', answer: 'Đúng' }];
 
       answerHtml = `
-        <div class="mt-3 space-y-2">
-          <p class="text-[10px] font-bold text-muted uppercase mb-1">Đủ 4 phát biểu — chọn Đúng/Sai cho từng ý:</p>
-          ${stmts.map((s, si) => `
-            <div class="flex items-start gap-2 p-2 bg-white dark:bg-slate-900 rounded-lg border border-theme">
-              <span class="text-xs font-black text-indigo-600 w-5 shrink-0 mt-0.5">${s.label}.</span>
-              <input type="text" value="${escapeHtml(s.text || '')}" class="input-glass !py-1 text-xs flex-1 !rounded-lg"
-                placeholder="Nội dung phát biểu ${s.label}..."
-                data-action="update-stmt-text" data-idx="${idx}" data-si="${si}">
-              <div class="flex gap-1 shrink-0">
-                <label class="flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-md border transition-colors ${s.answer === 'Đúng' ? 'bg-green-100 border-green-400 text-green-700' : 'border-theme text-muted hover:border-green-400'}">
-                  <input type="radio" name="stmt-${idx}-${si}" value="Đúng" ${s.answer === 'Đúng' ? 'checked' : ''}
-                    data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
-                  <span class="text-[11px] font-bold">Đúng</span>
-                </label>
-                <label class="flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-md border transition-colors ${s.answer === 'Sai' ? 'bg-red-100 border-red-400 text-red-700' : 'border-theme text-muted hover:border-red-400'}">
-                  <input type="radio" name="stmt-${idx}-${si}" value="Sai" ${s.answer === 'Sai' ? 'checked' : ''}
-                    data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
-                  <span class="text-[11px] font-bold">Sai</span>
-                </label>
-              </div>
-            </div>`).join('')}
+        <div class="mt-2 space-y-2">
+          <p class="text-xs font-bold text-muted uppercase">Chọn Đúng/Sai cho từng ý:</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${stmts.map((s, si) => `
+              <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg border border-theme">
+                <span class="text-xs font-black text-indigo-600 w-5">Ý ${s.label}</span>
+                <div class="flex gap-1">
+                  <label class="cursor-pointer">
+                    <input type="radio" name="stmt-${idx}-${si}" value="Đúng" ${s.answer === 'Đúng' ? 'checked' : ''} data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
+                    <span class="px-2 py-1 rounded border text-[11px] font-bold transition-colors ${s.answer === 'Đúng' ? 'bg-green-100 border-green-400 text-green-700' : 'border-theme text-muted hover:border-green-400'}">Đúng</span>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="radio" name="stmt-${idx}-${si}" value="Sai" ${s.answer === 'Sai' ? 'checked' : ''} data-action="update-stmt-ans" data-idx="${idx}" data-si="${si}" class="sr-only">
+                    <span class="px-2 py-1 rounded border text-[11px] font-bold transition-colors ${s.answer === 'Sai' ? 'bg-red-100 border-red-400 text-red-700' : 'border-theme text-muted hover:border-red-400'}">Sai</span>
+                  </label>
+                </div>
+              </div>`).join('')}
+          </div>
         </div>`;
     } else {
       answerHtml = `
@@ -1682,7 +1676,6 @@ function renderQuestionsEditor() {
             </button>
           </div>
         </div>
-        <textarea class="input-glass !py-1.5 text-sm w-full resize-none" rows="2" placeholder="Nội dung câu hỏi..." data-action="update-text" data-idx="${idx}">${escapeHtml(q.text || '')}</textarea>
         ${answerHtml}
       </div>`;
   }).join('');
