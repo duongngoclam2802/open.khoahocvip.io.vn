@@ -67,6 +67,9 @@
       <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="ai-pool-tab">
         <i data-lucide="bot" class="w-4 h-4 inline-block mr-1"></i> AI Pool
       </button>
+      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="exam-tab">
+        <i data-lucide="clipboard-list" class="w-4 h-4 inline-block mr-1"></i> Thi Online
+      </button>
     </div>
 
     <!-- ========================================== -->
@@ -436,6 +439,198 @@
 
           <div id="ai-pool-list" class="flex-1 space-y-2 overflow-y-auto custom-scrollbar max-h-[540px] pr-1">
             <div class="loader mx-auto mt-8"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 10. Exam (Thi Online) Tab                  -->
+    <!-- ========================================== -->
+    <div id="exam-tab" class="tab-content hidden fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+        <!-- LEFT: Create/Edit Exam -->
+        <div class="lg:col-span-2 space-y-5">
+
+          <!-- Exam Info Card -->
+          <div class="glass-card p-6 bg-card">
+            <h2 class="text-lg font-bold flex items-center gap-2 text-main mb-4">
+              <i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-500"></i> Tạo / Chỉnh sửa Đề Thi
+            </h2>
+            <input type="hidden" id="exam-editing-id">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Tên đề thi</label>
+                <input type="text" id="exam-title" class="input-glass" placeholder="VD: Kiểm tra Vật Lý - Chương 1">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Môn học</label>
+                  <select id="exam-subject" class="input-glass">
+                    <option value="">Chọn môn...</option>
+                    <option value="Toán">Toán</option>
+                    <option value="Lý">Vật Lý</option>
+                    <option value="Hóa">Hóa Học</option>
+                    <option value="Văn">Ngữ Văn</option>
+                    <option value="Anh">Tiếng Anh</option>
+                    <option value="Sinh">Sinh Học</option>
+                    <option value="Sử">Lịch Sử</option>
+                    <option value="Địa">Địa Lý</option>
+                    <option value="HSA">HSA</option>
+                    <option value="TSA">TSA</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Thời gian (phút)</label>
+                  <input type="number" id="exam-duration" class="input-glass" placeholder="45" min="1" max="300" value="45">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">PDF Đề thi</label>
+                <div class="flex gap-2">
+                  <input type="text" id="exam-pdf-url" class="input-glass" placeholder="URL PDF hoặc Google Drive embed...">
+                  <label class="btn-secondary !px-3 cursor-pointer flex items-center" title="Upload PDF">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    <input type="file" id="exam-pdf-upload" class="hidden" accept=".pdf">
+                  </label>
+                </div>
+                <div id="exam-pdf-progress" class="hidden mt-2 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div id="exam-pdf-progress-bar" class="h-full bg-indigo-500 w-0 transition-all rounded-full"></div>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Hướng dẫn làm bài</label>
+                <textarea id="exam-instructions" rows="3" class="input-glass resize-none" placeholder="Ví dụ: Đọc kỹ đề PDF, không tải lại trang khi đang làm bài, mỗi câu trả lời ngắn có thể nhập nhiều đáp án cách nhau bởi dấu | ..."></textarea>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Điểm đạt (%)</label>
+                  <input type="number" id="exam-pass-score" class="input-glass" placeholder="50" min="0" max="100" value="50">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Số lần làm</label>
+                  <input type="number" id="exam-attempt-limit" class="input-glass" placeholder="0 = không giới hạn" min="0" max="20" value="1">
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Mở đề lúc</label>
+                  <input type="datetime-local" id="exam-start-at" class="input-glass text-main">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Đóng đề lúc</label>
+                  <input type="datetime-local" id="exam-end-at" class="input-glass text-main">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Trạng thái</label>
+                <div class="flex gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="exam-status" value="draft" id="exam-status-draft" checked class="accent-indigo-500">
+                    <span class="text-sm font-medium text-muted">Nháp</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="exam-status" value="published" id="exam-status-published" class="accent-green-500">
+                    <span class="text-sm font-medium text-green-600">Công khai</span>
+                  </label>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-start gap-3 p-3 rounded-xl border border-theme bg-slate-50 dark:bg-slate-800/40 cursor-pointer">
+                  <input type="checkbox" id="exam-shuffle-questions" class="accent-indigo-500 mt-1">
+                  <span>
+                    <span class="block text-sm font-semibold text-main">Trộn thứ tự câu hỏi</span>
+                    <span class="text-xs text-muted">Chỉ trộn khi học sinh bắt đầu làm bài.</span>
+                  </span>
+                </label>
+                <label class="flex items-start gap-3 p-3 rounded-xl border border-theme bg-slate-50 dark:bg-slate-800/40 cursor-pointer">
+                  <input type="checkbox" id="exam-shuffle-options" class="accent-indigo-500 mt-1">
+                  <span>
+                    <span class="block text-sm font-semibold text-main">Trộn đáp án trắc nghiệm</span>
+                    <span class="text-xs text-muted">Giữ nguyên đáp án đúng sau khi xáo trộn.</span>
+                  </span>
+                </label>
+                <label class="flex items-start gap-3 p-3 rounded-xl border border-theme bg-slate-50 dark:bg-slate-800/40 cursor-pointer">
+                  <input type="checkbox" id="exam-show-result" class="accent-green-500 mt-1" checked>
+                  <span>
+                    <span class="block text-sm font-semibold text-main">Hiện điểm ngay sau nộp</span>
+                    <span class="text-xs text-muted">Nếu tắt, học sinh chỉ thấy trạng thái đã nộp.</span>
+                  </span>
+                </label>
+                <label class="flex items-start gap-3 p-3 rounded-xl border border-theme bg-slate-50 dark:bg-slate-800/40 cursor-pointer">
+                  <input type="checkbox" id="exam-allow-review" class="accent-green-500 mt-1" checked>
+                  <span>
+                    <span class="block text-sm font-semibold text-main">Cho xem lại bài sau nộp</span>
+                    <span class="text-xs text-muted">Hiển thị đáp án đúng/sai nếu bật xem kết quả.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Question Builder -->
+          <div class="glass-card p-6 bg-card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-main flex items-center gap-2">
+                <i data-lucide="list-ordered" class="w-4 h-4 text-indigo-500"></i> Danh sách câu hỏi
+                <span id="exam-q-count" class="text-xs font-black bg-indigo-500/15 text-indigo-500 px-2 py-0.5 rounded-full">0 câu</span>
+              </h3>
+              <button id="btn-add-question" class="btn-primary !py-1.5 !px-3 text-xs flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Thêm câu
+              </button>
+            </div>
+            <p class="text-xs text-muted mb-3">Câu trả lời ngắn có thể nhập nhiều đáp án đúng bằng cách ngăn cách bằng dấu <span class="font-black">|</span>. Mỗi câu có thể đặt số điểm riêng.</p>
+            <div id="exam-questions-container" class="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+              <p class="text-sm text-muted text-center py-6">Nhấn "Thêm câu" để bắt đầu tạo câu hỏi</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-3">
+            <button id="btn-cancel-exam" class="btn-secondary flex-1 flex items-center justify-center gap-2">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Làm mới
+            </button>
+            <button id="btn-save-exam" class="btn-primary flex-1 flex items-center justify-center gap-2 font-bold shadow-lg shadow-indigo-500/20">
+              <i data-lucide="save" class="w-4 h-4"></i> Lưu Đề Thi
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Exam List + Submissions -->
+        <div class="lg:col-span-3 space-y-6">
+
+          <!-- Exam List -->
+          <div class="glass-card p-6 bg-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold flex items-center gap-2 text-main">
+                <i data-lucide="list" class="text-indigo-500 w-5 h-5"></i> Danh sách Đề Thi
+              </h2>
+              <button id="btn-refresh-exams" class="p-2 text-muted hover:text-main rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Làm mới">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div id="exams-list-container" class="space-y-3 max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
+              <div class="loader mx-auto mt-4"></div>
+            </div>
+          </div>
+
+          <!-- Submissions Viewer -->
+          <div class="glass-card p-6 bg-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold flex items-center gap-2 text-main">
+                <i data-lucide="bar-chart-2" class="text-green-500 w-5 h-5"></i> Kết quả bài làm
+                <span id="exam-view-title" class="text-sm font-medium text-muted">— Chọn đề thi</span>
+              </h2>
+            </div>
+            <div id="submissions-container" class="space-y-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+              <div class="flex flex-col items-center py-10 text-muted">
+                <i data-lucide="mouse-pointer-click" class="w-10 h-10 mb-3 opacity-30"></i>
+                <p class="text-sm font-medium">Nhấn "Xem KQ" trên đề thi để xem danh sách học sinh đã nộp bài</p>
+              </div>
+            </div>
           </div>
         </div>
 

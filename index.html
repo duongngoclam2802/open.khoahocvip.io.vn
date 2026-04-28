@@ -201,6 +201,9 @@
           <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted font-medium" onclick="window.changeMainView('view-docs', this)">
             <i data-lucide="file-text" class="w-5 h-5"></i> Tài liệu PDF
           </button>
+          <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted font-medium" onclick="window.changeMainView('view-exams', this)">
+            <i data-lucide="clipboard-check" class="w-5 h-5"></i> Thi Online
+          </button>
           <button class="sidebar-item w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-muted font-medium" onclick="window.changeMainView('view-news', this)">
             <div class="flex items-center gap-3"><i data-lucide="bell" class="w-5 h-5"></i> Tin tức</div>
             <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full" id="news-badge">Mới</span>
@@ -393,6 +396,10 @@
           <button class="quick-action-pill flex items-center gap-2.5 bg-card border border-theme rounded-full px-5 py-2.5 text-sm font-bold text-main hover:border-blue-400 hover:text-blue-500 hover:shadow-lg hover:shadow-blue-500/10 transition-all group" onclick="window.changeMainView('view-docs')">
             <span class="w-7 h-7 bg-blue-100 dark:bg-blue-500/15 text-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">📎</span>
             Tài liệu mới
+          </button>
+          <button class="quick-action-pill flex items-center gap-2.5 bg-card border border-theme rounded-full px-5 py-2.5 text-sm font-bold text-main hover:border-indigo-400 hover:text-indigo-500 hover:shadow-lg hover:shadow-indigo-500/10 transition-all group" onclick="window.changeMainView('view-exams')">
+            <span class="w-7 h-7 bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">📝</span>
+            Thi online
           </button>
           <button class="quick-action-pill flex items-center gap-2.5 bg-card border border-theme rounded-full px-5 py-2.5 text-sm font-bold text-main hover:border-green-400 hover:text-green-600 hover:shadow-lg hover:shadow-green-500/10 transition-all group" onclick="window.changeMainView('view-news')">
             <span class="w-7 h-7 bg-green-100 dark:bg-green-500/15 text-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">📢</span>
@@ -802,6 +809,198 @@
         <div id="docs-list" class="space-y-4 max-w-4xl">
           <div class="loader mx-auto"></div>
         </div> <!-- End docs-list -->
+          </div> <!-- End content-container -->
+        </div> <!-- End view-content-wrapper -->
+      </main>
+
+      <!-- ============================================== -->
+      <!-- VIEW: EXAMS -->
+      <!-- ============================================== -->
+      <main id="view-exams" class="main-view transition-all duration-500 hidden">
+        <div class="view-content-wrapper">
+          <div class="content-container flex flex-col gap-8">
+        <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
+          <div class="flex items-center gap-3 border-b border-theme pb-4">
+            <div class="p-3 bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 rounded-xl">
+              <i data-lucide="clipboard-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-black text-main">Thi Online</h2>
+              <p class="text-sm text-muted font-medium mt-1">Làm bài trực tiếp trên web, nhúng PDF đề thi, tự chấm điểm và lưu lịch sử bài làm.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="btn-refresh-exam-hub" class="btn-secondary flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Làm mới
+            </button>
+            <div id="exam-auth-status" class="px-3 py-2 rounded-xl bg-card border border-theme text-sm font-semibold text-muted">
+              Đăng nhập để lưu bài làm và xem lịch sử.
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-card border border-theme rounded-2xl p-5">
+            <p class="text-xs font-bold uppercase tracking-widest text-muted mb-2">Đề công khai</p>
+            <div class="flex items-end justify-between gap-3">
+              <h3 id="exam-stat-total" class="text-3xl font-black text-main">0</h3>
+              <i data-lucide="clipboard-list" class="w-6 h-6 text-indigo-500"></i>
+            </div>
+          </div>
+          <div class="bg-card border border-theme rounded-2xl p-5">
+            <p class="text-xs font-bold uppercase tracking-widest text-muted mb-2">Đang mở</p>
+            <div class="flex items-end justify-between gap-3">
+              <h3 id="exam-stat-open" class="text-3xl font-black text-main">0</h3>
+              <i data-lucide="timer-reset" class="w-6 h-6 text-emerald-500"></i>
+            </div>
+          </div>
+          <div class="bg-card border border-theme rounded-2xl p-5">
+            <p class="text-xs font-bold uppercase tracking-widest text-muted mb-2">Điểm cao nhất</p>
+            <div class="flex items-end justify-between gap-3">
+              <h3 id="exam-stat-best" class="text-3xl font-black text-main">--</h3>
+              <i data-lucide="trophy" class="w-6 h-6 text-amber-500"></i>
+            </div>
+          </div>
+        </div>
+
+        <div id="exam-hub-overview" class="grid grid-cols-1 2xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-6">
+          <section class="bg-card border border-theme rounded-3xl p-5 flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted"></i>
+                <input id="exam-search-input" type="text" class="w-full pl-9 pr-4 py-2.5 bg-main border border-theme rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="Tìm đề thi...">
+              </div>
+              <select id="exam-subject-filter" class="px-4 py-2.5 bg-main border border-theme rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors">
+                <option value="all">Tất cả môn</option>
+                <option value="Toán">Toán</option>
+                <option value="Lý">Lý</option>
+                <option value="Hóa">Hóa</option>
+                <option value="Văn">Văn</option>
+                <option value="Anh">Anh</option>
+                <option value="Sinh">Sinh</option>
+                <option value="Sử">Sử</option>
+                <option value="Địa">Địa</option>
+                <option value="HSA">HSA</option>
+                <option value="TSA">TSA</option>
+              </select>
+            </div>
+            <div id="exam-list-container" class="space-y-3 max-h-[720px] overflow-y-auto custom-scrollbar pr-1">
+              <div class="loader mx-auto mt-10"></div>
+            </div>
+          </section>
+
+          <section class="flex flex-col gap-6">
+            <div id="exam-detail-container" class="bg-card border border-theme rounded-3xl p-6 min-h-[300px]">
+              <div class="h-full flex flex-col items-center justify-center text-center text-muted gap-3">
+                <i data-lucide="mouse-pointer-click" class="w-10 h-10 opacity-40"></i>
+                <p class="font-semibold">Chọn một đề thi để xem chi tiết, thời gian mở bài và bắt đầu làm bài.</p>
+              </div>
+            </div>
+            <div id="exam-history-container" class="bg-card border border-theme rounded-3xl p-6">
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="text-lg font-black text-main">Lịch sử bài làm</h3>
+                  <p class="text-sm text-muted font-medium">Hiển thị các lần nộp gần đây của bạn.</p>
+                </div>
+                <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+              </div>
+              <div id="exam-history-list" class="space-y-3">
+                <p class="text-sm text-muted">Đăng nhập để xem lịch sử bài làm.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div id="exam-workspace" class="hidden space-y-6">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center gap-3 flex-wrap">
+              <button id="btn-exam-back" class="btn-secondary flex items-center gap-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Quay lại danh sách
+              </button>
+              <div id="exam-autosave-status" class="px-3 py-2 rounded-xl bg-card border border-theme text-sm font-semibold text-muted">Autosave đang chờ...</div>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <button id="btn-exam-pdf-toggle" class="btn-secondary flex items-center gap-2">
+                <i data-lucide="panel-left-open" class="w-4 h-4"></i> Ẩn/hiện đề PDF
+              </button>
+              <div id="exam-timer-badge" class="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-500/20 text-sm font-black">--:--</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
+            <div class="space-y-6">
+              <section id="exam-pdf-panel" class="bg-card border border-theme rounded-3xl p-4 hidden">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <h3 class="text-lg font-black text-main">Đề thi PDF</h3>
+                    <p class="text-sm text-muted font-medium">PDF chỉ được tải khi bạn bắt đầu làm bài để giảm dữ liệu ban đầu.</p>
+                  </div>
+                  <a id="exam-open-pdf-link" href="#" target="_blank" class="text-sm font-bold text-indigo-500 hover:text-indigo-600">Mở tab mới</a>
+                </div>
+                <div class="w-full rounded-2xl overflow-hidden border border-theme bg-slate-100 dark:bg-slate-900 min-h-[420px]">
+                  <iframe id="exam-pdf-frame" title="Đề thi PDF" class="w-full h-[70vh] min-h-[420px]" loading="lazy"></iframe>
+                </div>
+              </section>
+
+              <section id="exam-result-container" class="hidden"></section>
+
+              <section id="exam-questions-panel" class="bg-card border border-theme rounded-3xl p-5">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h3 id="exam-live-title" class="text-xl font-black text-main">Bài thi</h3>
+                    <p id="exam-live-meta" class="text-sm text-muted font-medium">Thông tin đề thi sẽ hiển thị ở đây.</p>
+                  </div>
+                  <div class="min-w-[220px]">
+                    <div class="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted mb-2">
+                      <span>Tiến độ</span>
+                      <span id="exam-progress-text">0/0</span>
+                    </div>
+                    <div class="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div id="exam-progress-bar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width:0%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="exam-instructions-box" class="hidden mb-5 p-4 rounded-2xl bg-indigo-500/8 border border-indigo-500/15 text-sm text-main leading-relaxed"></div>
+                <div id="exam-questions-form" class="space-y-4">
+                  <div class="loader mx-auto mt-6"></div>
+                </div>
+              </section>
+            </div>
+
+            <aside class="space-y-4 xl:sticky xl:top-4">
+              <section class="bg-card border border-theme rounded-3xl p-5">
+                <p class="text-xs font-bold uppercase tracking-widest text-muted mb-2">Tổng quan bài thi</p>
+                <h3 id="exam-summary-title" class="text-lg font-black text-main">Chưa bắt đầu</h3>
+                <p id="exam-summary-subject" class="text-sm text-muted font-medium mt-1">Vui lòng chọn đề và bắt đầu làm bài.</p>
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                  <div class="rounded-2xl bg-main border border-theme p-3">
+                    <p class="text-[11px] uppercase tracking-widest text-muted font-bold">Thời gian</p>
+                    <p id="exam-summary-duration" class="text-lg font-black text-main mt-1">--</p>
+                  </div>
+                  <div class="rounded-2xl bg-main border border-theme p-3">
+                    <p class="text-[11px] uppercase tracking-widest text-muted font-bold">Mốc đạt</p>
+                    <p id="exam-summary-pass" class="text-lg font-black text-main mt-1">--</p>
+                  </div>
+                </div>
+                <div id="exam-summary-status" class="mt-4 space-y-2 text-sm text-muted"></div>
+              </section>
+
+              <section class="bg-card border border-theme rounded-3xl p-5">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                  <h3 class="text-base font-black text-main">Điều hướng câu hỏi</h3>
+                  <span id="exam-unanswered-count" class="text-xs font-bold text-muted">0 câu trống</span>
+                </div>
+                <div id="exam-question-palette" class="grid grid-cols-5 gap-2">
+                  <div class="col-span-full text-sm text-muted">Bảng câu hỏi sẽ hiển thị khi bắt đầu bài thi.</div>
+                </div>
+              </section>
+
+              <button id="btn-submit-exam" class="w-full bg-gradient-to-r from-indigo-500 to-sky-500 text-white py-3.5 rounded-2xl font-black shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="send" class="w-4 h-4"></i> Nộp bài
+              </button>
+            </aside>
+          </div>
+        </div>
           </div> <!-- End content-container -->
         </div> <!-- End view-content-wrapper -->
       </main>
@@ -1358,6 +1557,10 @@
         <span id="mobile-notif-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card"></span>
       </div>
       <span class="text-[10px] font-bold">Thông báo</span>
+    </button>
+    <button class="mobile-nav-btn flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 text-muted hover:text-orange-500 transition-colors" onclick="window.navTo('view-exams', this)" data-view="view-exams" id="mobile-nav-exams">
+      <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold">Thi</span>
     </button>
     <button class="mobile-nav-btn flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 text-muted hover:text-orange-500 transition-colors" onclick="window.navTo('view-profile', this)" data-view="view-profile" id="mobile-nav-profile">
       <i data-lucide="user-cog" class="w-5 h-5"></i>
@@ -2314,5 +2517,4 @@
 
 </body>
 </html>
-
 
