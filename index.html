@@ -61,7 +61,120 @@
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <link rel="stylesheet" href="css/styles.css">
-  <script type="module" src="js/index.js"></script>
+  <script>
+    window.changeMainView = window.changeMainView || function(viewId, element = null) {
+      const views = document.querySelectorAll('.main-view');
+      views.forEach((view) => {
+        view.classList.add('hidden');
+        view.style.opacity = '0';
+      });
+
+      const target = document.getElementById(viewId);
+      if (!target) return;
+      target.classList.remove('hidden');
+      target.style.opacity = '1';
+
+      const container = document.getElementById('main-views-container');
+      if (container) container.scrollTop = 0;
+
+      if (element) {
+        document.querySelectorAll('.sidebar-item').forEach((btn) => {
+          btn.classList.remove('active', 'text-main');
+          btn.classList.add('text-muted');
+        });
+        element.classList.add('active', 'text-main');
+        element.classList.remove('text-muted');
+      }
+
+      document.querySelectorAll('.mobile-nav-btn').forEach((btn) => {
+        btn.classList.remove('active');
+        btn.removeAttribute('data-active');
+        if (btn.getAttribute('data-view') === viewId) {
+          btn.classList.add('active');
+          btn.setAttribute('data-active', 'true');
+        }
+      });
+    };
+
+    window.navTo = window.navTo || function(viewId, element = null) {
+      window.changeMainView(viewId, element);
+    };
+
+    window._openLoginOverlay = window._openLoginOverlay || function() {
+      const overlay = document.getElementById('login-overlay');
+      if (!overlay) return;
+      overlay.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        overlay.classList.remove('opacity-0');
+        overlay.classList.add('opacity-100');
+      });
+    };
+
+    window._closeLoginOverlay = window._closeLoginOverlay || function() {
+      const overlay = document.getElementById('login-overlay');
+      if (!overlay) return;
+      overlay.classList.add('opacity-0');
+      overlay.classList.remove('opacity-100');
+      setTimeout(() => overlay.classList.add('hidden'), 300);
+    };
+
+    window._headerOpenNotifications = window._headerOpenNotifications || function() {
+      const backdrop = document.getElementById('notif-backdrop');
+      const sheet = document.getElementById('notif-sheet');
+      if (backdrop) {
+        backdrop.classList.remove('hidden');
+        requestAnimationFrame(() => backdrop.classList.add('open'));
+      }
+      if (sheet) sheet.classList.add('open');
+      if (typeof window.loadNotifications === 'function') {
+        Promise.resolve(window.loadNotifications()).catch((error) => console.error(error));
+      }
+    };
+
+    window._closeNotifications = window._closeNotifications || function() {
+      const backdrop = document.getElementById('notif-backdrop');
+      const sheet = document.getElementById('notif-sheet');
+      if (sheet) sheet.classList.remove('open');
+      if (backdrop) {
+        backdrop.classList.remove('open');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+      }
+    };
+
+    window._popupLogin = window._popupLogin || async function() {
+      const btn = document.getElementById('btn-login-large');
+      const original = btn ? btn.innerHTML : '';
+      try {
+        if (btn) btn.innerHTML = '<div class="loader !w-5 !h-5 !border-2"></div>';
+        const firebase = await import('./js/firebase-config.js?v=20260428-2');
+        await firebase.signInWithPopup(firebase.auth, firebase.googleProvider);
+        window._closeLoginOverlay();
+      } catch (error) {
+        console.error(error);
+        alert('Loi dang nhap: ' + (error?.message || error));
+      } finally {
+        if (btn) btn.innerHTML = original;
+      }
+    };
+
+    window._headerActivateKey = window._headerActivateKey || function() {
+      const userMenu = document.getElementById('user-menu');
+      const isLoggedIn = !!(userMenu && !userMenu.classList.contains('hidden'));
+      if (!isLoggedIn) {
+        window._openLoginOverlay();
+        return;
+      }
+      window.changeMainView('view-profile');
+      setTimeout(() => {
+        const input = document.getElementById('activation-key-input');
+        if (input) {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          input.focus();
+        }
+      }, 300);
+    };
+  </script>
+  <script type="module" src="js/index.js?v=20260428-5"></script>
 </head>
 <body class="bg-main text-main flex h-screen overflow-hidden transition-colors duration-500 font-sans">
 
@@ -274,12 +387,12 @@
         </button>
 
         <!-- Notification Bell -->
-        <button id="btn-notification" class="relative p-2 text-muted hover:text-orange-500 rounded-full transition-colors" title="Thông báo">
+        <button id="btn-notification" onclick="event.stopImmediatePropagation(); window._headerOpenNotifications()" class="relative p-2 text-muted hover:text-orange-500 rounded-full transition-colors" title="Thông báo">
           <i data-lucide="bell" class="w-5 h-5"></i>
           <span id="notif-badge" class="hidden absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">0</span>
         </button>
         
-        <button id="btn-login" class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg shadow-orange-500/30 hover:-translate-y-0.5 text-sm">
+        <button id="btn-login" onclick="event.stopImmediatePropagation(); window._openLoginOverlay()" class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg shadow-orange-500/30 hover:-translate-y-0.5 text-sm">
           Đăng nhập
         </button>
 
@@ -1491,13 +1604,13 @@
   <!-- Login Modal -->
   <div id="login-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex flex-col items-center justify-center hidden opacity-0 transition-opacity">
     <div class="glass-card bg-card p-10 flex flex-col items-center max-w-sm text-center relative shadow-2xl rounded-3xl" id="login-card">
-      <button id="btn-close-login" class="absolute top-4 right-4 text-muted hover:text-red-500 p-2 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <button id="btn-close-login" onclick="event.stopImmediatePropagation(); window._closeLoginOverlay()" class="absolute top-4 right-4 text-muted hover:text-red-500 p-2 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
       <div class="w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-full flex items-center justify-center mb-6 ring-8 ring-orange-500/20 shadow-xl">
         <i data-lucide="lock-keyhole" class="w-10 h-10"></i>
       </div>
       <h2 class="text-2xl font-black mb-2 text-main">Đăng nhập yêu cầu</h2>
-      <button id="btn-login-large" class="w-full bg-white text-slate-800 border border-slate-200 py-3.5 rounded-2xl flex justify-center gap-3 font-bold mt-4 shadow-xl">
-        Google Login
+      <button id="btn-login-large" onclick="event.stopImmediatePropagation(); window._popupLogin()" class="w-full bg-white text-slate-800 border border-slate-200 py-3.5 rounded-2xl flex justify-center gap-3 font-bold mt-4 shadow-xl">
+        Đăng Nhập Bằng Google
       </button>
     </div>
   </div>
@@ -1515,8 +1628,8 @@
   </div>
 
   <!-- Auth Loading Splash Screen -->
-  <div id="auth-check-loader" class="fixed inset-0 z-[200] flex flex-col items-center justify-center transition-opacity duration-300"
-       style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+  <div id="auth-check-loader" class="hidden fixed inset-0 z-[200] flex flex-col items-center justify-center transition-opacity duration-300"
+       style="display:none; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <div class="flex flex-col items-center gap-6">
       <!-- Logo -->
       <div class="relative">
@@ -1532,8 +1645,107 @@
       </div>
       <!-- Spinner -->
       <div class="loader !w-10 !h-10 !border-[3px] !border-t-orange-400" style="border-color: rgba(255,255,255,0.1); border-top-color: #fb923c;"></div>
+      <div id="startup-actions" class="hidden flex-col items-center gap-3">
+        <button type="button" onclick="window.location.reload()" class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-orange-500/20 hover:-translate-y-0.5 transition-all">
+          Tải lại trang
+        </button>
+        <p id="startup-hint" class="max-w-xs text-center text-xs leading-5 text-slate-500"></p>
+      </div>
     </div>
   </div>
+
+  <script>
+    (function() {
+      return;
+      const startupState = {
+        bootReady: false,
+        authResolved: false,
+        failureShown: false,
+      };
+
+      function getStartupEls() {
+        const loader = document.getElementById('auth-check-loader');
+        return {
+          loader,
+          title: loader ? loader.querySelector('h2') : null,
+          subtitle: loader ? loader.querySelector('p') : null,
+          spinner: loader ? loader.querySelector('.loader') : null,
+          actions: document.getElementById('startup-actions'),
+          hint: document.getElementById('startup-hint'),
+        };
+      }
+
+      function formatStartupHint(detail) {
+        const generic = location.protocol === 'file:'
+          ? 'Trang này cần chạy qua HTTP. Có thể dùng Live Server hoặc python -m http.server.'
+          : 'Kiểm tra kết nối internet hoặc các script CDN/Firebase rồi tải lại.';
+        return detail ? `${detail} ${generic}` : generic;
+      }
+
+      function showStartupFailure(message, detail = '') {
+        if (startupState.bootReady || startupState.authResolved || startupState.failureShown) return;
+        startupState.failureShown = true;
+        const { loader, title, subtitle, spinner, actions, hint } = getStartupEls();
+        if (!loader) return;
+
+        loader.classList.remove('hidden', 'opacity-0');
+        loader.style.pointerEvents = 'auto';
+        if (title) title.textContent = 'Khởi động thất bại';
+        if (subtitle) subtitle.textContent = message;
+        if (spinner) spinner.classList.add('hidden');
+        if (actions) actions.classList.remove('hidden');
+        if (hint) hint.textContent = formatStartupHint(detail);
+      }
+
+      window.__khvStartup = {
+        markBootReady() {
+          startupState.bootReady = true;
+        },
+        markAuthResolved() {
+          startupState.authResolved = true;
+        },
+        fail(message) {
+          showStartupFailure(message || 'Không thể tải ứng dụng.');
+        }
+      };
+
+      window.addEventListener('error', (event) => {
+        if (startupState.bootReady || startupState.authResolved) return;
+        const target = event.target;
+        if (target && target.tagName === 'SCRIPT') {
+          const src = target.src ? target.src.split('/').slice(-2).join('/') : '';
+          showStartupFailure('Không tải được các tệp khởi động của ứng dụng.', src ? `Lỗi script: ${src}.` : '');
+          return;
+        }
+        const filename = event.filename ? event.filename.split('/').pop() : '';
+        const detail = [filename, event.message].filter(Boolean).join(': ');
+        showStartupFailure('Lỗi JavaScript khi khởi động.', detail);
+      }, true);
+
+      window.addEventListener('unhandledrejection', (event) => {
+        if (startupState.bootReady || startupState.authResolved) return;
+        const reason = event.reason;
+        const detail = typeof reason === 'string'
+          ? reason
+          : (reason && typeof reason.message === 'string' ? reason.message : '');
+        showStartupFailure('Quá trình khởi động bị gián đoạn.', detail);
+      });
+
+      setTimeout(() => {
+        if (startupState.bootReady || startupState.authResolved) return;
+        showStartupFailure(
+          location.protocol === 'file:'
+            ? 'Trình duyệt đã chặn module khi mở trực tiếp tệp HTML.'
+            : 'Khởi động quá lâu, ứng dụng không thể nạp xong.'
+        );
+      }, 7000);
+    })();
+  </script>
+
+  <script>
+    window.__khvStartup = { markBootReady() {}, markAuthResolved() {}, fail() {} };
+    document.getElementById('auth-check-loader')?.remove();
+  </script>
 
   <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-20 lg:bottom-4 right-4 glass-card bg-card px-4 py-3 flex items-center gap-3 transform translate-y-20 opacity-0 transition-all z-[100] shadow-xl pointer-events-none rounded-2xl">
@@ -1569,7 +1781,7 @@
   </nav>
 
   <!-- ===== NOTIFICATION CENTER BOTTOM SHEET ===== -->
-  <div id="notif-backdrop" class="bottom-sheet-backdrop hidden"></div>
+  <div id="notif-backdrop" onclick="event.stopImmediatePropagation(); window._closeNotifications()" class="bottom-sheet-backdrop hidden"></div>
   <div id="notif-sheet" class="bottom-sheet" style="max-height: 80vh;">
     <div class="bottom-sheet-handle"></div>
     <div class="flex items-center justify-between px-6 py-4 border-b border-theme">
@@ -1578,7 +1790,7 @@
       </h3>
       <div class="flex items-center gap-3">
         <button id="btn-mark-all-read" class="text-xs text-orange-500 font-bold hover:underline">Đánh dấu đã đọc</button>
-        <button id="btn-close-notif" class="p-1.5 text-muted hover:text-main rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        <button id="btn-close-notif" onclick="event.stopImmediatePropagation(); window._closeNotifications()" class="p-1.5 text-muted hover:text-main rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -2517,4 +2729,3 @@
 
 </body>
 </html>
-

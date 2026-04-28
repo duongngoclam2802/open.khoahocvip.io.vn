@@ -3,10 +3,9 @@ import {
   signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
   collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, writeBatch, arrayUnion, query, where,
   ref, uploadBytesResumable, getDownloadURL
-} from './firebase-config.js';
+} from './firebase-config.js?v=20260428-2';
 
 // DOM Auth
-const authCheckLoader = document.getElementById('auth-check-loader');
 const loginOverlay = document.getElementById('login-overlay');
 const btnLogin = document.getElementById('btn-login');
 const btnLoginLarge = document.getElementById('btn-login-large');
@@ -161,15 +160,6 @@ window.changeMainView = (viewId, element = null) => {
 // INITIALIZATION
 // ----------------------------------------------------
 
-function hideAuthLoader() {
-  if (!authCheckLoader) return;
-  authCheckLoader.classList.add('opacity-0');
-  setTimeout(() => authCheckLoader.classList.add('hidden'), 350);
-}
-
-// Force-hide after 6s as safety net (network issues, Firebase timeout, etc.)
-const _loaderTimeout = setTimeout(hideAuthLoader, 6000);
-
 // Set persistence FIRST, then register auth listener
 // so Firebase emits stable state (not null→user flicker)
 (async () => {
@@ -183,10 +173,6 @@ const _loaderTimeout = setTimeout(hideAuthLoader, 6000);
   loadLeaderboard();
 
   onAuthStateChanged(auth, async (user) => {
-    // Safety: always hide loader when auth state is determined
-    hideAuthLoader();
-    clearTimeout(_loaderTimeout);
-
     if (user) {
     // ✅ Mọi tài khoản Google đều đăng nhập được — không chặn ở bước này
     currentUser = user;
@@ -268,21 +254,41 @@ function updateAuthUI() {
   renderExamAuthStatus();
 }
 
+function openLoginOverlay() {
+  if (!loginOverlay) return;
+  loginOverlay.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    loginOverlay.classList.remove('opacity-0');
+    loginOverlay.classList.add('opacity-100');
+  });
+}
+
+function closeLoginOverlay() {
+  if (!loginOverlay) return;
+  loginOverlay.classList.add('opacity-0');
+  loginOverlay.classList.remove('opacity-100');
+  setTimeout(() => loginOverlay.classList.add('hidden'), 300);
+  pendingLecture = null;
+}
+
+window._openLoginOverlay = openLoginOverlay;
+window._closeLoginOverlay = closeLoginOverlay;
+
 const handleLogin = async () => {
+  const btnText = btnLoginLarge ? btnLoginLarge.innerHTML : '';
   try {
-    const btnText = btnLoginLarge.innerHTML;
-    btnLoginLarge.innerHTML = '<div class="loader !w-5 !h-5 !border-2"></div>';
+    if (btnLoginLarge) btnLoginLarge.innerHTML = '<div class="loader !w-5 !h-5 !border-2"></div>';
     await signInWithPopup(auth, googleProvider);
-    btnLoginLarge.innerHTML = btnText;
+    closeLoginOverlay();
   } catch (error) {
     alert("Lỗi đăng nhập: " + error.message);
   }
 };
 
-btnLogin.addEventListener('click', handleLogin);
-btnLoginLarge.addEventListener('click', handleLogin);
-btnLogout.addEventListener('click', () => signOut(auth));
-btnCloseLogin.addEventListener('click', () => {
+if(btnLogin) btnLogin.addEventListener('click', handleLogin);
+if(btnLoginLarge) btnLoginLarge.addEventListener('click', handleLogin);
+if(btnLogout) btnLogout.addEventListener('click', () => signOut(auth));
+if(btnCloseLogin) btnCloseLogin.addEventListener('click', () => {
   loginOverlay.classList.remove('opacity-100');
   setTimeout(() => loginOverlay.classList.add('hidden'), 300);
   pendingLecture = null;
@@ -884,7 +890,7 @@ function markLectureDone(lectureId, isDone) {
   updateMarkDoneButton(); renderOutline(); updateProgressUI(); saveProgressToServer();
 }
 
-btnMarkDone.addEventListener('click', () => {
+if(btnMarkDone) btnMarkDone.addEventListener('click', () => {
   if (!currentLecture || !currentUser) return;
   const pData = getCourseProgress(currentCourse.id);
   markLectureDone(currentLecture.id, !pData.completedLectures.includes(currentLecture.id));
@@ -970,7 +976,7 @@ function loadNotebook(lectureId) {
   notebookTextarea.innerText = savedNote;
 }
 
-notebookTextarea.addEventListener('input', () => {
+if(notebookTextarea) notebookTextarea.addEventListener('input', () => {
   if (!currentUser || !currentCourse || !activeLectureId) return;
   saveIndicator.classList.remove('opacity-100');
   clearTimeout(noteTimeout);
@@ -984,7 +990,7 @@ notebookTextarea.addEventListener('input', () => {
   }, 1000);
 });
 
-btnExportPdf.addEventListener('click', () => {
+if(btnExportPdf) btnExportPdf.addEventListener('click', () => {
   const noteText = notebookTextarea.innerText.trim();
   if (!noteText) { alert('Ghi chú trống'); return; }
   const el = document.createElement('div');
@@ -1194,7 +1200,9 @@ async function loadQA() {
   lucide.createIcons();
 }
 
-document.getElementById('btn-submit-qa').addEventListener('click', async () => {
+const btnSubmitQa = document.getElementById('btn-submit-qa');
+if (btnSubmitQa) {
+  btnSubmitQa.addEventListener('click', async () => {
   if (!currentUser) { showToast("Vui lòng đăng nhập!", true); return; }
   const val = document.getElementById('qa-input').value.trim();
   if(!val) return;
@@ -1207,6 +1215,7 @@ document.getElementById('btn-submit-qa').addEventListener('click', async () => {
   document.getElementById('qa-input').value = '';
   showToast("Đã gửi câu hỏi. Đang chờ Admin duyệt.");
 });
+}
 
 window.replyQA = async (id) => {
   if (!currentUser) { showToast("Vui lòng đăng nhập!", true); return; }
@@ -2838,7 +2847,7 @@ if (photoInput) {
 
         // Update Auth profile
         try {
-          const { updateProfile } = await import('https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js');
+          const { updateProfile } = await import('./vendor/firebase-auth.js?v=20260428-1');
           await updateProfile(auth.currentUser, { photoURL: url });
         } catch(e) { console.error(e); }
 
@@ -3101,6 +3110,15 @@ async function loadNotifications() {
     console.error('Notification load error:', e);
   }
 }
+
+window.loadNotifications = loadNotifications;
+window._headerOpenNotifications = () => {
+  openBottomSheet('notif-sheet', 'notif-backdrop');
+  loadNotifications();
+};
+window._closeNotifications = () => {
+  closeBottomSheet('notif-sheet', 'notif-backdrop');
+};
 
 function renderNotifications() {
   const list = document.getElementById('notif-list');

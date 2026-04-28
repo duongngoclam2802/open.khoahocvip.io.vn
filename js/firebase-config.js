@@ -1,7 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-storage.js";
+import { initializeApp } from "./vendor/firebase-app.js?v=20260428-1";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "./vendor/firebase-auth.js?v=20260428-1";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, writeBatch, arrayUnion } from "./vendor/firebase-firestore.js?v=20260428-1";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "./vendor/firebase-storage.js?v=20260428-1";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDkA6RYXElUuv--_Mxco8KK5dC4cvyWHyY",
