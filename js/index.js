@@ -1598,16 +1598,12 @@ function renderExamHistory() {
 }
 
 async function fetchPublishedExamCatalog() {
-  const publicSnap = await getDocs(query(collection(db, 'exams_public'), where('status', '==', 'published')));
-  const publicDocs = [];
-  publicSnap.forEach((docSnap) => publicDocs.push({ id: docSnap.id, ...docSnap.data() }));
-  if (publicDocs.length) return publicDocs;
-
-  const fullSnap = await getDocs(query(collection(db, 'exams'), where('status', '==', 'published')));
-  const fullDocs = [];
-  fullSnap.forEach((docSnap) => {
-    const data = docSnap.data();
-    fullDocs.push({
+  try {
+    const fullSnap = await getDocs(query(collection(db, 'exams'), where('status', '==', 'published')));
+    const fullDocs = [];
+    fullSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      fullDocs.push({
       id: docSnap.id,
       title: data.title,
       subject: data.subject,

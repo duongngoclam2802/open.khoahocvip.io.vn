@@ -1817,8 +1817,7 @@ async function loadExams() {
   container.innerHTML = '<div class="loader mx-auto mt-4"></div>';
   try {
     const exams = [];
-    let snap = await getDocs(collection(db, 'exams_public'));
-    if (snap.empty) snap = await getDocs(collection(db, 'exams'));
+    let snap = await getDocs(collection(db, 'exams'));
 
     snap.forEach((docSnap) => {
       const data = docSnap.data();
@@ -1963,7 +1962,6 @@ document.getElementById('btn-save-exam').addEventListener('click', async () => {
     if (editingId) {
       const examRef = doc(db, 'exams', editingId);
       batch.set(examRef, payload, { merge: true });
-      batch.set(doc(db, 'exams_public', editingId), getExamSummaryPayload(editingId, payload), { merge: true });
       await batch.commit();
       showToast('Đã cập nhật đề thi!');
     } else {
@@ -1971,7 +1969,6 @@ document.getElementById('btn-save-exam').addEventListener('click', async () => {
       payload.createdAt = nowIso;
       payload.createdBy = currentUser.email;
       batch.set(examRef, payload);
-      batch.set(doc(db, 'exams_public', examRef.id), getExamSummaryPayload(examRef.id, payload));
       await batch.commit();
       showToast('Đã tạo đề thi mới!');
     }
@@ -1980,7 +1977,7 @@ document.getElementById('btn-save-exam').addEventListener('click', async () => {
     loadExams();
   } catch (error) {
     console.error(error);
-    showToast('Lỗi lưu đề thi!', true);
+    showToast('Lỗi lưu đề thi! ' + (error.message || ''), true);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Lưu Đề Thi';
@@ -2034,7 +2031,6 @@ window.deleteExamHandler = async (id) => {
   try {
     const batch = writeBatch(db);
     batch.delete(doc(db, 'exams', id));
-    batch.delete(doc(db, 'exams_public', id));
     await batch.commit();
     showToast('Đã xóa đề thi');
     loadExams();
