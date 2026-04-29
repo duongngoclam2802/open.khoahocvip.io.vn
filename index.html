@@ -49,6 +49,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
@@ -60,9 +61,9 @@
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-  <link rel="stylesheet" href="css/styles.css?v=mobile-exam-ui-20260429">
+  <link rel="stylesheet" href="css/styles.css?v=mobile-pdf-viewer-20260429">
   <script type="module" src="js/hoconline.js"></script>
-  <script type="module" src="js/exams.js?v=mobile-exam-ui-20260429"></script>
+  <script type="module" src="js/exams.js?v=mobile-pdf-viewer-20260429"></script>
 </head>
 <body class="bg-main text-main flex h-screen overflow-hidden transition-colors duration-500 font-sans">
 
@@ -657,12 +658,27 @@
           <div class="exam-split-shell flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
             <section class="exam-pdf-pane lg:w-[70%] h-[64%] lg:h-full min-h-0 border-b lg:border-b-0 lg:border-r border-theme bg-slate-100 dark:bg-slate-950">
               <div class="h-full flex flex-col">
-                <div class="px-4 py-2 border-b border-theme bg-card/90 backdrop-blur flex items-center justify-between gap-3">
+                <div class="exam-pdf-header px-4 py-2 border-b border-theme bg-card/90 backdrop-blur flex items-center justify-between gap-3">
                   <span class="text-xs font-bold text-muted flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> PDF đề thi</span>
                   <a id="exam-pdf-open-link" href="#" target="_blank" class="text-xs font-bold text-blue-500 hover:underline">Mở tab mới</a>
                 </div>
-                <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                <div class="exam-desktop-pdf flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                   <iframe id="exam-pdf-frame" title="PDF đề thi" class="w-full h-full min-h-[560px] bg-white" src=""></iframe>
+                </div>
+                <div id="exam-mobile-pdf-viewer" class="exam-mobile-pdf-viewer">
+                  <div class="exam-mobile-pdf-toolbar">
+                    <span id="exam-mobile-pdf-info" class="exam-mobile-pdf-info">PDF</span>
+                    <div class="exam-mobile-pdf-actions">
+                      <button type="button" data-mobile-pdf-scope="room" data-mobile-pdf-action="zoom-out" aria-label="Thu nhỏ PDF"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                      <button type="button" data-mobile-pdf-scope="room" data-mobile-pdf-action="fit">Vừa</button>
+                      <button type="button" data-mobile-pdf-scope="room" data-mobile-pdf-action="zoom-in" aria-label="Phóng to PDF"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                      <a id="exam-mobile-pdf-open-link" href="#" target="_blank" aria-label="Mở PDF trong tab mới"><i data-lucide="external-link" class="w-4 h-4"></i></a>
+                    </div>
+                  </div>
+                  <div class="exam-mobile-pdf-canvas-wrap custom-scrollbar">
+                    <div id="exam-mobile-pdf-status" class="exam-mobile-pdf-status">Đang tải PDF...</div>
+                    <div id="exam-mobile-pdf-pages" class="exam-mobile-pdf-pages"></div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -723,12 +739,27 @@
           <div class="exam-split-shell flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
             <section class="exam-result-pdf-pane lg:w-[62%] h-[55%] lg:h-full min-h-0 border-b lg:border-b-0 lg:border-r border-theme bg-slate-100 dark:bg-slate-950">
               <div class="h-full flex flex-col">
-                <div class="px-4 py-2 border-b border-theme bg-card/90 backdrop-blur flex items-center justify-between gap-3">
+                <div class="exam-pdf-header px-4 py-2 border-b border-theme bg-card/90 backdrop-blur flex items-center justify-between gap-3">
                   <span class="text-xs font-bold text-muted flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> PDF đề thi</span>
                   <a id="exam-result-pdf-open-link" href="#" target="_blank" class="text-xs font-bold text-blue-500 hover:underline">Mở tab mới</a>
                 </div>
-                <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                <div class="exam-desktop-pdf flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                   <iframe id="exam-result-pdf-frame" title="PDF đề thi khi xem kết quả" class="w-full h-full min-h-[520px] bg-white" src=""></iframe>
+                </div>
+                <div id="exam-result-mobile-pdf-viewer" class="exam-mobile-pdf-viewer">
+                  <div class="exam-mobile-pdf-toolbar">
+                    <span id="exam-result-mobile-pdf-info" class="exam-mobile-pdf-info">PDF</span>
+                    <div class="exam-mobile-pdf-actions">
+                      <button type="button" data-mobile-pdf-scope="result" data-mobile-pdf-action="zoom-out" aria-label="Thu nhỏ PDF"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                      <button type="button" data-mobile-pdf-scope="result" data-mobile-pdf-action="fit">Vừa</button>
+                      <button type="button" data-mobile-pdf-scope="result" data-mobile-pdf-action="zoom-in" aria-label="Phóng to PDF"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                      <a id="exam-result-mobile-pdf-open-link" href="#" target="_blank" aria-label="Mở PDF trong tab mới"><i data-lucide="external-link" class="w-4 h-4"></i></a>
+                    </div>
+                  </div>
+                  <div class="exam-mobile-pdf-canvas-wrap custom-scrollbar">
+                    <div id="exam-result-mobile-pdf-status" class="exam-mobile-pdf-status">Đang tải PDF...</div>
+                    <div id="exam-result-mobile-pdf-pages" class="exam-mobile-pdf-pages"></div>
+                  </div>
                 </div>
               </div>
             </section>

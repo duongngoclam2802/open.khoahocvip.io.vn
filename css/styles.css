@@ -253,6 +253,114 @@ body.exam-focus-mode #view-exam-result {
   color: #fff;
   box-shadow: 0 10px 22px rgba(16, 185, 129, 0.18);
 }
+.exam-mobile-pdf-viewer {
+  display: none;
+}
+.exam-mobile-pdf-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+.exam-mobile-pdf-info {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.exam-mobile-pdf-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.exam-mobile-pdf-actions button,
+.exam-mobile-pdf-actions a {
+  min-width: 2.05rem;
+  height: 2.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+.exam-mobile-pdf-actions button:nth-child(2) {
+  padding: 0 0.55rem;
+  width: auto;
+}
+.exam-mobile-pdf-canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #eef2f7;
+  -webkit-overflow-scrolling: touch;
+}
+.dark .exam-mobile-pdf-canvas-wrap {
+  background: #0f172a;
+}
+.exam-mobile-pdf-pages {
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+.exam-mobile-pdf-page {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+.exam-mobile-pdf-page canvas {
+  display: block;
+  background: #fff;
+}
+.exam-mobile-pdf-page-label {
+  padding: 0.35rem 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-align: center;
+}
+.exam-mobile-pdf-fallback {
+  width: calc(100vw - 1.5rem);
+  height: calc(100dvh - 8.5rem);
+  border: 0;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+.exam-mobile-pdf-status {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: center;
+  pointer-events: none;
+}
+.exam-mobile-pdf-status.is-hidden {
+  display: none;
+}
 .exam-subject-tab {
   border: 1px solid var(--border-color);
   background: var(--bg-card);
@@ -372,6 +480,17 @@ body.exam-focus-mode #view-exam-result {
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
   }
+  .exam-pdf-header,
+  .exam-desktop-pdf {
+    display: none !important;
+  }
+  .exam-mobile-pdf-viewer {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    flex-direction: column;
+  }
   .exam-split-shell {
     height: 0;
   }
@@ -395,6 +514,11 @@ body.exam-focus-mode #view-exam-result {
   #exam-result-pdf-frame {
     min-height: 0 !important;
     height: 100% !important;
+  }
+  #view-exam-room .exam-pdf-pane > div,
+  #view-exam-result .exam-result-pdf-pane > div {
+    height: 100%;
+    min-height: 0;
   }
   .exam-answer-pane .sticky {
     position: static;
@@ -2998,5 +3122,12 @@ button, a, input, select, textarea {
   #main-views-container,
   #global-sidebar .overflow-y-auto {
     padding-bottom: 90px !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.exam-focus-mode #main-views-container,
+  body.exam-focus-mode .main-view {
+    padding-bottom: 0 !important;
   }
 }

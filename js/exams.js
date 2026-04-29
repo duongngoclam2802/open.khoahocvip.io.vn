@@ -7,6 +7,8 @@ import {
 const TRUE_FALSE_LABELS = ['a', 'b', 'c', 'd'];
 const TRUE_FALSE_SCORE_MAP = { 0: 0, 1: 0.1, 2: 0.25, 3: 0.5, 4: 1 };
 const EXAM_CACHE_TTL = 60 * 1000;
+const PDFJS_WORKER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const MOBILE_PDF_BREAKPOINT = '(max-width: 1023px)';
 
 let examUser = null;
 let examCache = { exams: [], submissions: [], loadedAt: 0 };
@@ -24,6 +26,30 @@ let examTimer = null;
 let draftTimer = null;
 let examSubmitting = false;
 let currentResult = null;
+const mobilePdfViewers = {
+  room: {
+    url: '',
+    doc: null,
+    scale: 1,
+    fitScale: 1,
+    renderToken: 0,
+    pagesId: 'exam-mobile-pdf-pages',
+    statusId: 'exam-mobile-pdf-status',
+    infoId: 'exam-mobile-pdf-info',
+    openLinkId: 'exam-mobile-pdf-open-link'
+  },
+  result: {
+    url: '',
+    doc: null,
+    scale: 1,
+    fitScale: 1,
+    renderToken: 0,
+    pagesId: 'exam-result-mobile-pdf-pages',
+    statusId: 'exam-result-mobile-pdf-status',
+    infoId: 'exam-result-mobile-pdf-info',
+    openLinkId: 'exam-result-mobile-pdf-open-link'
+  }
+};
 
 function escapeHTML(value = '') {
   return String(value).replace(/[&<>"']/g, (ch) => ({
@@ -475,6 +501,168 @@ function readLocalDraft(examId) {
   }
 }
 
+function isMobileExamLayout() {
+  return window.matchMedia(MOBILE_PDF_BREAKPOINT).matches;
+}
+
+function configurePdfJs() {
+  if (!window.pdfjsLib) return false;
+  if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_SRC;
+  }
+  return true;
+}
+
+function setMobilePdfStatus(scope, message, hidden = false) {
+  const state = mobilePdfViewers[scope];
+  const status = state ? document.getElementById(state.statusId) : null;
+  if (!status) return;
+  status.textContent = message || '';
+  status.classList.toggle('is-hidden', hidden);
+}
+
+function setMobilePdfInfo(scope, text) {
+  const state = mobilePdfViewers[scope];
+  const info = state ? document.getElementById(state.infoId) : null;
+  if (info) info.textContent = text;
+}
+
+function renderMobilePdfFallback(scope, url) {
+  const state = mobilePdfViewers[scope];
+  const pages = state ? document.getElementById(state.pagesId) : null;
+  if (!pages || !url) return;
+
+  const viewerUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
+  pages.innerHTML = `
+    <iframe class="exam-mobile-pdf-fallback" title="PDF đề thi" src="${viewerUrl}"></iframe>
+  `;
+  setMobilePdfInfo(scope, 'PDF');
+  setMobilePdfStatus(scope, '', true);
+}
+
+async function setupMobilePdfViewer(scope, url) {
+  const state = mobilePdfViewers[scope];
+  if (!state) return;
+
+  const openLink = document.getElementById(state.openLinkId);
+  if (openLink) {
+    openLink.href = url || '#';
+    openLink.classList.toggle('pointer-events-none', !url);
+  }
+
+  const pages = document.getElementById(state.pagesId);
+  if (!pages) return;
+
+  if (!isMobileExamLayout()) return;
+  if (!url) {
+    state.url = '';
+    state.doc = null;
+    pages.innerHTML = '';
+    setMobilePdfInfo(scope, 'PDF');
+    setMobilePdfStatus(scope, 'Chưa có file PDF cho đề thi này.');
+    return;
+  }
+
+  if (!configurePdfJs()) {
+    renderMobilePdfFallback(scope, url);
+    return;
+  }
+
+  if (state.url === url && state.doc) {
+    await renderMobilePdfPages(scope, { resetToFit: true });
+    return;
+  }
+
+  state.url = url;
+  state.doc = null;
+  state.scale = 1;
+  state.fitScale = 1;
+  pages.innerHTML = '';
+  setMobilePdfInfo(scope, 'Đang tải...');
+  setMobilePdfStatus(scope, 'Đang tải PDF...');
+
+  try {
+    state.doc = await window.pdfjsLib.getDocument({ url }).promise;
+    await renderMobilePdfPages(scope, { resetToFit: true });
+  } catch (error) {
+    console.error('setupMobilePdfViewer error:', error);
+    state.doc = null;
+    renderMobilePdfFallback(scope, url);
+  }
+}
+
+async function renderMobilePdfPages(scope, options = {}) {
+  const state = mobilePdfViewers[scope];
+  if (!state?.doc) return;
+
+  const pages = document.getElementById(state.pagesId);
+  if (!pages) return;
+
+  const token = ++state.renderToken;
+  pages.innerHTML = '';
+  setMobilePdfStatus(scope, 'Đang dựng trang PDF...');
+
+  try {
+    const firstPage = await state.doc.getPage(1);
+    const baseViewport = firstPage.getViewport({ scale: 1 });
+    const availableWidth = Math.max(280, (pages.parentElement?.clientWidth || window.innerWidth) - 24);
+    state.fitScale = Math.max(0.35, Math.min(1.8, availableWidth / baseViewport.width));
+    if (options.resetToFit || !state.scale) state.scale = state.fitScale;
+    state.scale = Math.max(0.35, Math.min(2.8, state.scale));
+
+    setMobilePdfInfo(scope, `${state.doc.numPages} trang · ${Math.round((state.scale / state.fitScale) * 100)}%`);
+
+    for (let pageNumber = 1; pageNumber <= state.doc.numPages; pageNumber += 1) {
+      if (token !== state.renderToken) return;
+      const page = pageNumber === 1 ? firstPage : await state.doc.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: state.scale });
+      const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'exam-mobile-pdf-page';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = `${Math.floor(viewport.width)}px`;
+      canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+      const label = document.createElement('div');
+      label.className = 'exam-mobile-pdf-page-label';
+      label.textContent = `Trang ${pageNumber}/${state.doc.numPages}`;
+
+      wrapper.appendChild(canvas);
+      wrapper.appendChild(label);
+      pages.appendChild(wrapper);
+
+      const context = canvas.getContext('2d');
+      await page.render({
+        canvasContext: context,
+        viewport,
+        transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null
+      }).promise;
+    }
+
+    if (token === state.renderToken) setMobilePdfStatus(scope, '', true);
+  } catch (error) {
+    console.error('renderMobilePdfPages error:', error);
+    renderMobilePdfFallback(scope, state.url);
+  }
+}
+
+function changeMobilePdfZoom(scope, action) {
+  const state = mobilePdfViewers[scope];
+  if (!state?.doc) return;
+
+  if (action === 'zoom-in') state.scale *= 1.18;
+  if (action === 'zoom-out') state.scale /= 1.18;
+  if (action === 'fit') {
+    renderMobilePdfPages(scope, { resetToFit: true });
+    return;
+  }
+  renderMobilePdfPages(scope);
+}
+
 function renderExamRoom() {
   if (!currentExam) return;
 
@@ -489,6 +677,7 @@ function renderExamRoom() {
     openLink.href = currentExam.pdfUrl || '#';
     openLink.classList.toggle('pointer-events-none', !currentExam.pdfUrl);
   }
+  setupMobilePdfViewer('room', currentExam.pdfUrl);
   if (submitBtn) {
     submitBtn.disabled = false;
     submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Nộp bài';
@@ -902,6 +1091,7 @@ function renderExamResult() {
     resultOpenLink.href = exam.pdfUrl || '#';
     resultOpenLink.classList.toggle('pointer-events-none', !exam.pdfUrl);
   }
+  setupMobilePdfViewer('result', exam.pdfUrl);
 
   summary.innerHTML = `
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -1117,6 +1307,22 @@ function bindExamEvents() {
 
   document.querySelectorAll('[data-result-pane-target]').forEach((button) => {
     button.addEventListener('click', () => setExamResultPane(button.getAttribute('data-result-pane-target')));
+  });
+
+  document.querySelectorAll('[data-mobile-pdf-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      changeMobilePdfZoom(button.dataset.mobilePdfScope, button.dataset.mobilePdfAction);
+    });
+  });
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (!isMobileExamLayout()) return;
+      if (currentExam?.pdfUrl) setupMobilePdfViewer('room', currentExam.pdfUrl);
+      if (currentResult?.exam?.pdfUrl) setupMobilePdfViewer('result', currentResult.exam.pdfUrl);
+    }, 200);
   });
 }
 
