@@ -143,6 +143,14 @@ function renderAdminExams() {
   if (window.lucide) window.lucide.createIcons({ root: table });
 }
 
+function resetExamEditorScroll(modal) {
+  if (!modal) return;
+  modal.scrollTop = 0;
+  modal.querySelectorAll('.custom-scrollbar, .overflow-y-auto').forEach((scrollArea) => {
+    scrollArea.scrollTop = 0;
+  });
+}
+
 function openExamEditor(examId = '') {
   const source = examId ? adminExams.find((exam) => exam.id === examId) : createEmptyExam();
   if (!source) {
@@ -160,7 +168,9 @@ function openExamEditor(examId = '') {
 
   const modal = document.getElementById('modal-exam');
   if (modal) {
+    document.body.classList.add('admin-modal-open');
     modal.classList.remove('hidden');
+    resetExamEditorScroll(modal);
     setTimeout(() => modal.classList.remove('opacity-0'), 10);
   }
 }
@@ -169,7 +179,10 @@ function closeExamEditor() {
   const modal = document.getElementById('modal-exam');
   if (!modal) return;
   modal.classList.add('opacity-0');
-  setTimeout(() => modal.classList.add('hidden'), 250);
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    document.body.classList.remove('admin-modal-open');
+  }, 250);
 }
 
 function fillExamForm(exam) {

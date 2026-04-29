@@ -75,35 +75,72 @@ body {
 
 /* Admin editor modals */
 .admin-editor-overlay {
-  padding: clamp(1rem, 4dvh, 2.5rem) 1rem;
-  overflow-y: auto;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: 24px;
+  align-items: center !important;
+  overflow: hidden;
   overscroll-behavior: contain;
 }
+.admin-editor-overlay.hidden {
+  display: none !important;
+}
+#modal-course.admin-editor-overlay {
+  z-index: 60;
+}
+#modal-exam.admin-editor-overlay {
+  z-index: 65;
+}
+body.admin-modal-open {
+  overflow: hidden;
+}
 .admin-editor-panel {
-  height: min(88dvh, calc(100dvh - 4rem));
-  max-height: calc(100dvh - 4rem);
+  height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 48px);
   min-height: 0;
-  margin: auto 0;
+  margin: 0;
 }
 .admin-editor-panel-wide {
-  height: min(88dvh, calc(100dvh - 4rem));
-  max-height: calc(100dvh - 4rem);
+  height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 48px);
+}
+.admin-editor-panel > .flex-1 {
+  min-height: 0;
 }
 @supports not (height: 100dvh) {
   .admin-editor-panel,
   .admin-editor-panel-wide {
-    height: calc(100vh - 4rem);
+    height: calc(100vh - 48px);
+    max-height: calc(100vh - 48px);
+  }
+  .admin-editor-overlay {
+    height: 100vh;
   }
 }
 @media (max-width: 640px) {
   .admin-editor-overlay {
-    padding: 0.75rem;
+    padding: 12px;
   }
   .admin-editor-panel,
   .admin-editor-panel-wide {
-    height: calc(100dvh - 1.5rem);
-    max-height: calc(100dvh - 1.5rem);
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
     border-radius: 1.25rem;
+  }
+}
+@media (max-height: 760px) {
+  .admin-editor-overlay {
+    padding: 12px;
+  }
+  .admin-editor-panel,
+  .admin-editor-panel-wide {
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
   }
 }
 

@@ -218,6 +218,31 @@ window.deleteDocHandler = async (col, id) => {
 let editingCourse = null;
 const modalCourse = document.getElementById('modal-course');
 
+function resetAdminEditorScroll(modal) {
+  if (!modal) return;
+  modal.scrollTop = 0;
+  modal.querySelectorAll('.custom-scrollbar, .overflow-y-auto').forEach((scrollArea) => {
+    scrollArea.scrollTop = 0;
+  });
+}
+
+function showCourseModal() {
+  if (!modalCourse) return;
+  document.body.classList.add('admin-modal-open');
+  modalCourse.classList.remove('hidden');
+  resetAdminEditorScroll(modalCourse);
+  setTimeout(() => modalCourse.classList.remove('opacity-0'), 10);
+}
+
+function hideCourseModal() {
+  if (!modalCourse) return;
+  modalCourse.classList.add('opacity-0');
+  setTimeout(() => {
+    modalCourse.classList.add('hidden');
+    document.body.classList.remove('admin-modal-open');
+  }, 300);
+}
+
 document.getElementById('upload-thumbnail-input').addEventListener('change', async(e) => {
   const file = e.target.files[0]; if(!file) return;
   const progressContainer = document.getElementById('thumbnail-progress');
@@ -246,7 +271,7 @@ window.editCourse = (id) => {
   document.getElementById('course-name').value = editingCourse.title || "";
   document.getElementById('course-thumbnail').value = editingCourse.thumbnailUrl || "";
   renderTopicsEditor();
-  modalCourse.classList.remove('hidden'); setTimeout(() => modalCourse.classList.remove('opacity-0'), 10);
+  showCourseModal();
 };
 
 document.getElementById('btn-add-course').addEventListener('click', () => {
@@ -256,10 +281,10 @@ document.getElementById('btn-add-course').addEventListener('click', () => {
   document.getElementById('course-name').value = "";
   document.getElementById('course-thumbnail').value = "";
   renderTopicsEditor();
-  modalCourse.classList.remove('hidden'); setTimeout(() => modalCourse.classList.remove('opacity-0'), 10);
+  showCourseModal();
 });
-document.getElementById('btn-close-modal').addEventListener('click', () => { modalCourse.classList.add('opacity-0'); setTimeout(() => modalCourse.classList.add('hidden'), 300); });
-document.getElementById('btn-cancel-course').addEventListener('click', () => { modalCourse.classList.add('opacity-0'); setTimeout(() => modalCourse.classList.add('hidden'), 300); });
+document.getElementById('btn-close-modal').addEventListener('click', hideCourseModal);
+document.getElementById('btn-cancel-course').addEventListener('click', hideCourseModal);
 
 function renderTopicsEditor() {
   const container = document.getElementById('topics-editor-container');
@@ -1378,7 +1403,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
 
 
 
