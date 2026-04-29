@@ -497,12 +497,14 @@ function renderExamRoom() {
   renderCompactAnswerForm();
   updateExamProgress();
   updateExamTimerUI();
+  setExamRoomPane('pdf');
   if (window.lucide) window.lucide.createIcons();
 }
 
 function renderCompactAnswerForm() {
   const container = document.getElementById('exam-answer-form');
   if (!container || !currentExam) return;
+  const previousScrollTop = container.scrollTop;
 
   container.innerHTML = currentQuestions.map((question, index) => {
     const questionNumber = index + 1;
@@ -553,6 +555,7 @@ function renderCompactAnswerForm() {
   });
 
   if (window.lucide) window.lucide.createIcons({ root: container });
+  container.scrollTop = previousScrollTop;
 }
 
 function renderQuestionInput(question, qid) {
@@ -944,6 +947,7 @@ function renderExamResult() {
       review.innerHTML = '';
     }
   }
+  setExamResultPane('summary');
   if (window.lucide) window.lucide.createIcons();
 }
 
@@ -1044,6 +1048,23 @@ function setExamFocusMode(viewId) {
   }
 }
 
+function setPaneState(viewId, pane, buttonSelector, attributeName) {
+  const view = document.getElementById(viewId);
+  if (!view) return;
+  view.dataset.activePane = pane;
+  view.querySelectorAll(buttonSelector).forEach((button) => {
+    button.classList.toggle('is-active', button.getAttribute(attributeName) === pane);
+  });
+}
+
+function setExamRoomPane(pane = 'pdf') {
+  setPaneState('view-exam-room', pane, '[data-exam-pane-target]', 'data-exam-pane-target');
+}
+
+function setExamResultPane(pane = 'summary') {
+  setPaneState('view-exam-result', pane, '[data-result-pane-target]', 'data-result-pane-target');
+}
+
 function exitExamRoom() {
   if (!currentExam) {
     window.changeMainView('view-exams');
@@ -1089,6 +1110,14 @@ function bindExamEvents() {
 
   const exitBtn = document.getElementById('btn-exit-exam');
   if (exitBtn) exitBtn.addEventListener('click', exitExamRoom);
+
+  document.querySelectorAll('[data-exam-pane-target]').forEach((button) => {
+    button.addEventListener('click', () => setExamRoomPane(button.getAttribute('data-exam-pane-target')));
+  });
+
+  document.querySelectorAll('[data-result-pane-target]').forEach((button) => {
+    button.addEventListener('click', () => setExamResultPane(button.getAttribute('data-result-pane-target')));
+  });
 }
 
 onAuthStateChanged(auth, (user) => {

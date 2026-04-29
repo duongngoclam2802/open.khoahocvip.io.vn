@@ -230,6 +230,29 @@ body.exam-focus-mode #view-exam-room,
 body.exam-focus-mode #view-exam-result {
   height: 100%;
 }
+.exam-mobile-tabs {
+  display: none;
+}
+.exam-mobile-tab {
+  min-height: 2.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.exam-mobile-tab.is-active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(16, 185, 129, 0.18);
+}
 .exam-subject-tab {
   border: 1px solid var(--border-color);
   background: var(--bg-card);
@@ -304,6 +327,123 @@ body.exam-focus-mode #view-exam-result {
 .exam-review-row.is-wrong {
   border-color: rgba(239, 68, 68, 0.35);
   background: rgba(239, 68, 68, 0.06);
+}
+
+@media (max-width: 1023px) {
+  body.exam-focus-mode {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body.exam-focus-mode #main-views-container {
+    height: 100dvh;
+  }
+  body.exam-focus-mode #view-exam-room,
+  body.exam-focus-mode #view-exam-result {
+    height: 100dvh !important;
+    max-height: 100dvh;
+  }
+  .exam-view-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  .exam-room-header {
+    padding: 0.65rem 0.85rem !important;
+  }
+  .exam-room-header h2 {
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+  .exam-room-header p {
+    font-size: 0.62rem;
+    letter-spacing: 0.11em;
+  }
+  .exam-room-header .btn-secondary {
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+  .exam-mobile-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-main);
+    background: color-mix(in srgb, var(--bg-main) 86%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .exam-split-shell {
+    height: 0;
+  }
+  #view-exam-room .exam-pdf-pane,
+  #view-exam-room .exam-answer-pane,
+  #view-exam-result .exam-result-pdf-pane,
+  #view-exam-result .exam-result-review-pane {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+  #view-exam-room[data-active-pane="pdf"] .exam-answer-pane,
+  #view-exam-room[data-active-pane="answers"] .exam-pdf-pane,
+  #view-exam-result[data-active-pane="pdf"] .exam-result-review-pane,
+  #view-exam-result[data-active-pane="summary"] .exam-result-pdf-pane {
+    display: none;
+  }
+  #exam-pdf-frame,
+  #exam-result-pdf-frame {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+  .exam-answer-pane .sticky {
+    position: static;
+    padding: 0.75rem !important;
+  }
+  .exam-answer-pane .sticky .grid {
+    gap: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .exam-answer-pane .sticky .rounded-2xl {
+    border-radius: 1rem;
+    padding: 0.65rem !important;
+  }
+  #exam-timer,
+  #exam-progress-text {
+    font-size: 1.35rem !important;
+  }
+  #exam-answer-form {
+    padding: 0.75rem !important;
+    gap: 0.55rem !important;
+  }
+  .exam-question-row {
+    border-radius: 1rem !important;
+    padding: 0.65rem !important;
+  }
+  .exam-question-row .mb-3 {
+    margin-bottom: 0.5rem !important;
+  }
+  .exam-choice-btn {
+    min-height: 2rem;
+    font-size: 0.8125rem;
+  }
+  .exam-answer-pane > div > .shrink-0 {
+    padding: 0.75rem !important;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+  }
+  #btn-submit-exam {
+    border-radius: 1rem !important;
+    padding: 0.78rem 1rem !important;
+  }
+  #view-exam-result .exam-result-review-pane > div {
+    padding: 0.75rem !important;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+  }
+  #exam-result-summary,
+  #exam-review-panel {
+    border-radius: 1rem !important;
+    padding: 1rem !important;
+  }
 }
 
 /* Fix date input tràn ra ngoài trên mọi trình duyệt */
@@ -2263,7 +2403,12 @@ body.scene-cafe .bg-main {
   background: rgba(249,115,22,0.08);
   color: #f97316;
 }
-.scene-btn .scene-icon { font-size: 26px; line-height: 1; }
+.scene-btn .scene-icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.2;
+  line-height: 1;
+}
 
 #scene-panel.open { left: 0 !important; }
 #btn-scene-tab:hover {

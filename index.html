@@ -60,9 +60,9 @@
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=mobile-exam-ui-20260429">
   <script type="module" src="js/hoconline.js"></script>
-  <script type="module" src="js/exams.js"></script>
+  <script type="module" src="js/exams.js?v=mobile-exam-ui-20260429"></script>
 </head>
 <body class="bg-main text-main flex h-screen overflow-hidden transition-colors duration-500 font-sans">
 
@@ -77,7 +77,7 @@
       background:#0f172a; color:white; text-align:center; padding:2rem;
       font-family:sans-serif;
     ">
-      <div style="font-size:3rem; margin-bottom:1rem;">âš ï¸</div>
+      <div style="font-size:3rem; margin-bottom:1rem; font-weight:900;">!</div>
       <h2 style="font-size:1.4rem; font-weight:900; color:#f97316; margin-bottom:0.5rem;">
         JavaScript bị tắt!
       </h2>
@@ -136,7 +136,7 @@
   ">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <h3 style="font-size:14px;font-weight:800;color:var(--text-main);margin:0;">🌍 Môi trường học tập</h3>
-      <button id="btn-close-scene" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);padding:2px 6px;">âœ•</button>
+      <button id="btn-close-scene" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);padding:2px 6px;" aria-label="Đóng bảng môi trường">&times;</button>
     </div>
     <div id="scene-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-color);">
@@ -156,7 +156,7 @@
     writing-mode:vertical-rl;font-size:11px;font-weight:800;
     color:var(--text-muted);letter-spacing:.08em;
     transition:color .2s,background .2s;
-  " title="Chọn môi trường học tập">🌙 SCENE</button>
+  " title="Chọn môi trường học tập">SCENE</button>
 
 
 
@@ -391,7 +391,7 @@
         <!-- ===== QUICK ACTION BAR ===== -->
         <div class="flex flex-wrap gap-3" id="quick-action-bar">
           <button id="btn-quick-continue" class="quick-action-pill flex items-center gap-2.5 bg-card border border-theme rounded-full px-5 py-2.5 text-sm font-bold text-main hover:border-orange-400 hover:text-orange-500 hover:shadow-lg hover:shadow-orange-500/10 transition-all group" onclick="window.changeMainView('view-my-courses')">
-            <span class="w-7 h-7 bg-orange-100 dark:bg-orange-500/15 text-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">â–¶ï¸</span>
+            <span class="w-7 h-7 bg-orange-100 dark:bg-orange-500/15 text-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"><i data-lucide="play" class="w-4 h-4"></i></span>
             Tiếp tục học
           </button>
           <button class="quick-action-pill flex items-center gap-2.5 bg-card border border-theme rounded-full px-5 py-2.5 text-sm font-bold text-main hover:border-blue-400 hover:text-blue-500 hover:shadow-lg hover:shadow-blue-500/10 transition-all group" onclick="window.changeMainView('view-docs')">
@@ -436,7 +436,7 @@
                 <p class="stat-label-v2">Giờ Học</p>
                 <h3 class="stat-value-v2" id="stat-hours">0<span class="text-base text-muted font-medium ml-1">h</span></h3>
               </div>
-              <div class="stat-icon-v2 bg-blue-100 dark:bg-blue-500/15 text-blue-500">â±ï¸</div>
+              <div class="stat-icon-v2 bg-blue-100 dark:bg-blue-500/15 text-blue-500"><i data-lucide="clock-3" class="w-6 h-6"></i></div>
             </div>
             <!-- Sparkline SVG -->
             <div class="sparkline-wrap">
@@ -630,9 +630,9 @@
       <!-- ============================================== -->
       <!-- VIEW: ONLINE EXAM ROOM -->
       <!-- ============================================== -->
-      <main id="view-exam-room" class="main-view transition-all duration-500 hidden h-full min-h-0 overflow-hidden">
-        <div class="h-full flex flex-col bg-main">
-          <div class="shrink-0 px-4 lg:px-6 py-3 border-b border-theme bg-white/80 dark:bg-slate-900/80 backdrop-blur flex items-center justify-between gap-3">
+      <main id="view-exam-room" class="main-view transition-all duration-500 hidden h-full min-h-0 overflow-hidden" data-active-pane="pdf">
+        <div class="exam-view-shell h-full flex flex-col bg-main">
+          <div class="exam-room-header shrink-0 px-4 lg:px-6 py-3 border-b border-theme bg-white/80 dark:bg-slate-900/80 backdrop-blur flex items-center justify-between gap-3">
             <div class="min-w-0">
               <p class="text-[11px] font-black uppercase tracking-widest text-emerald-500">Phòng thi online</p>
               <h2 id="exam-room-title" class="text-base lg:text-xl font-black text-main truncate">Đề thi</h2>
@@ -645,8 +645,17 @@
             </div>
           </div>
 
-          <div class="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-            <section class="lg:w-[70%] h-[64%] lg:h-full min-h-0 border-b lg:border-b-0 lg:border-r border-theme bg-slate-100 dark:bg-slate-950">
+          <div class="exam-mobile-tabs">
+            <button type="button" class="exam-mobile-tab is-active" data-exam-pane-target="pdf">
+              <i data-lucide="file-text" class="w-4 h-4"></i> Đề thi
+            </button>
+            <button type="button" class="exam-mobile-tab" data-exam-pane-target="answers">
+              <i data-lucide="list-checks" class="w-4 h-4"></i> Đáp án
+            </button>
+          </div>
+
+          <div class="exam-split-shell flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+            <section class="exam-pdf-pane lg:w-[70%] h-[64%] lg:h-full min-h-0 border-b lg:border-b-0 lg:border-r border-theme bg-slate-100 dark:bg-slate-950">
               <div class="h-full flex flex-col">
                 <div class="px-4 py-2 border-b border-theme bg-card/90 backdrop-blur flex items-center justify-between gap-3">
                   <span class="text-xs font-bold text-muted flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> PDF đề thi</span>
@@ -658,7 +667,7 @@
               </div>
             </section>
 
-            <aside class="lg:w-[30%] h-[36%] lg:h-full min-h-0 bg-main overflow-hidden">
+            <aside class="exam-answer-pane lg:w-[30%] h-[36%] lg:h-full min-h-0 bg-main overflow-hidden">
               <div class="h-full flex flex-col">
                 <div class="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-theme p-4">
                   <div class="grid grid-cols-2 gap-3 mb-3">
@@ -692,9 +701,9 @@
       <!-- ============================================== -->
       <!-- VIEW: ONLINE EXAM RESULT -->
       <!-- ============================================== -->
-      <main id="view-exam-result" class="main-view transition-all duration-500 hidden h-full min-h-0 overflow-hidden">
-        <div class="h-full flex flex-col bg-main">
-          <div class="shrink-0 px-4 lg:px-6 py-3 border-b border-theme bg-white/80 dark:bg-slate-900/80 backdrop-blur flex items-center justify-between gap-3">
+      <main id="view-exam-result" class="main-view transition-all duration-500 hidden h-full min-h-0 overflow-hidden" data-active-pane="summary">
+        <div class="exam-view-shell h-full flex flex-col bg-main">
+          <div class="exam-room-header shrink-0 px-4 lg:px-6 py-3 border-b border-theme bg-white/80 dark:bg-slate-900/80 backdrop-blur flex items-center justify-between gap-3">
             <div class="min-w-0">
               <p class="text-[11px] font-black uppercase tracking-widest text-emerald-500">Kết quả & xem lại</p>
               <h2 id="exam-result-title" class="text-base lg:text-xl font-black text-main truncate">Kết quả bài thi</h2>
@@ -702,8 +711,17 @@
             <button type="button" class="btn-secondary !py-2 !px-4 text-sm" onclick="window.changeMainView('view-exams')">Về danh sách đề</button>
           </div>
 
-          <div class="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-            <section class="lg:w-[62%] h-[55%] lg:h-full min-h-0 border-b lg:border-b-0 lg:border-r border-theme bg-slate-100 dark:bg-slate-950">
+          <div class="exam-mobile-tabs">
+            <button type="button" class="exam-mobile-tab is-active" data-result-pane-target="summary">
+              <i data-lucide="badge-check" class="w-4 h-4"></i> Kết quả
+            </button>
+            <button type="button" class="exam-mobile-tab" data-result-pane-target="pdf">
+              <i data-lucide="file-text" class="w-4 h-4"></i> Đề thi
+            </button>
+          </div>
+
+          <div class="exam-split-shell flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+            <section class="exam-result-pdf-pane lg:w-[62%] h-[55%] lg:h-full min-h-0 border-b lg:border-b-0 lg:border-r border-theme bg-slate-100 dark:bg-slate-950">
               <div class="h-full flex flex-col">
                 <div class="px-4 py-2 border-b border-theme bg-card/90 backdrop-blur flex items-center justify-between gap-3">
                   <span class="text-xs font-bold text-muted flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> PDF đề thi</span>
@@ -715,7 +733,7 @@
               </div>
             </section>
 
-            <aside class="lg:w-[38%] h-[45%] lg:h-full min-h-0 bg-main overflow-hidden">
+            <aside class="exam-result-review-pane lg:w-[38%] h-[45%] lg:h-full min-h-0 bg-main overflow-hidden">
               <div class="h-full overflow-y-auto custom-scrollbar p-4 space-y-4">
                 <div id="exam-result-summary" class="glass-card bg-card border border-theme rounded-2xl p-5"></div>
                 <div id="exam-review-panel" class="glass-card bg-card border border-theme rounded-2xl p-5 hidden"></div>
@@ -951,7 +969,7 @@
           <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="Toán">Toán</button>
           <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="Lý">Lý</button>
           <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="Hóa">Hóa</button>
-          <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="VÄƒn">VÄƒn</button>
+          <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="Văn">Văn</button>
           <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="Anh">Anh</button>
           <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="Sinh">Sinh</button>
           <button class="doc-tab-btn px-4 py-2 rounded-full font-bold text-sm bg-card border border-theme text-muted hover:border-blue-400 hover:text-blue-500 transition-colors shrink-0" data-cat="Sử">Sử</button>
@@ -1902,7 +1920,7 @@
         if (totalSecs <= 0) {
           clearInterval(interval); isRunning = false;
           if (!isBreak) {
-            // Work done â†’ start break
+            // Work done -> start break
             isBreak = true; totalSecs = BREAK_MINS * 60;
             if (widget) widget.classList.add('break-mode');
             if (pomIcon) pomIcon.setAttribute('data-lucide', 'coffee');
@@ -2068,7 +2086,7 @@
         'Hóa':  'rgba(168,85,247,0.4)',
         'Sinh': 'rgba(34,197,94,0.4)',
         'Anh':  'rgba(20,184,166,0.4)',
-        'VÄƒn':  'rgba(251,191,36,0.4)',
+        'Văn':  'rgba(251,191,36,0.4)',
         'Sử':   'rgba(249,115,22,0.4)',
         'Địa':  'rgba(16,185,129,0.4)',
       };
@@ -2092,7 +2110,7 @@
         {
           id: 'none',
           label: 'Bình thường',
-          icon: 'â˜€ï¸',
+          icon: 'sun',
           bodyClass: '',
           audioUrl: '',
           rainEnabled: false,
@@ -2100,7 +2118,7 @@
         {
           id: 'rain',
           label: 'Mưa rơi',
-          icon: '🌧️',
+          icon: 'cloud-rain',
           bodyClass: 'scene-rain',
           audioUrl: 'https://www.soundjay.com/nature/sounds/rain-02.mp3',
           rainEnabled: true,
@@ -2108,7 +2126,7 @@
         {
           id: 'forest',
           label: 'Rừng xanh',
-          icon: '🌿',
+          icon: 'trees',
           bodyClass: 'scene-forest',
           audioUrl: 'https://www.soundjay.com/nature/sounds/crickets-1.mp3',
           rainEnabled: false,
@@ -2116,7 +2134,7 @@
         {
           id: 'cafe',
           label: 'Quán cà phê',
-          icon: 'â˜•',
+          icon: 'coffee',
           bodyClass: 'scene-cafe',
           audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
           rainEnabled: false,
@@ -2124,7 +2142,7 @@
         {
           id: 'night',
           label: 'Đêm khuya',
-          icon: '🌙',
+          icon: 'moon',
           bodyClass: 'scene-night',
           audioUrl: '',
           rainEnabled: false,
@@ -2138,10 +2156,11 @@
           const btn = document.createElement('button');
           btn.className = 'scene-btn' + (scene.id === 'none' ? ' active' : '');
           btn.dataset.sceneId = scene.id;
-          btn.innerHTML = `<span class="scene-icon">${scene.icon}</span>${scene.label}`;
+          btn.innerHTML = `<i data-lucide="${scene.icon}" class="scene-icon"></i>${scene.label}`;
           btn.addEventListener('click', () => applyScene(scene));
           grid.appendChild(btn);
         });
+        if (window.lucide) window.lucide.createIcons();
       }
 
       // Scene panel toggle
@@ -2246,7 +2265,7 @@
         });
 
         // Update tab label
-        if (tab) tab.textContent = scene.icon + ' SCENE';
+        if (tab) tab.textContent = 'SCENE';
 
         activeSceneId = scene.id;
         localStorage.setItem('kh_scene', scene.id);
@@ -2346,7 +2365,7 @@
       // Show random quote after 3 seconds
       setTimeout(() => showBubble(QUOTES[Math.floor(Math.random() * QUOTES.length)]), 3000);
 
-      // Click mascot â†’ random quote
+      // Click mascot -> random quote
       widget.addEventListener('click', () => {
         showBubble(QUOTES[Math.floor(Math.random() * QUOTES.length)], 5000);
         widget.classList.add('cheering');
@@ -2370,7 +2389,7 @@
         }
       }, 30000);
 
-      // Every 30 min of study â†’ celebrate
+      // Every 30 min of study -> celebrate
       setInterval(() => {
         const studyMins = (Date.now() - studyStartTime) / 60000;
         if (studyMins >= 30) {
