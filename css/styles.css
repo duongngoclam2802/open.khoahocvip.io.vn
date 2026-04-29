@@ -73,6 +73,40 @@ body {
   box-shadow: 0 20px 40px -5px var(--shadow-color);
 }
 
+/* Admin editor modals */
+.admin-editor-overlay {
+  padding: clamp(1rem, 4dvh, 2.5rem) 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.admin-editor-panel {
+  height: min(88dvh, calc(100dvh - 4rem));
+  max-height: calc(100dvh - 4rem);
+  min-height: 0;
+  margin: auto 0;
+}
+.admin-editor-panel-wide {
+  height: min(88dvh, calc(100dvh - 4rem));
+  max-height: calc(100dvh - 4rem);
+}
+@supports not (height: 100dvh) {
+  .admin-editor-panel,
+  .admin-editor-panel-wide {
+    height: calc(100vh - 4rem);
+  }
+}
+@media (max-width: 640px) {
+  .admin-editor-overlay {
+    padding: 0.75rem;
+  }
+  .admin-editor-panel,
+  .admin-editor-panel-wide {
+    height: calc(100dvh - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
+    border-radius: 1.25rem;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -143,6 +177,22 @@ body {
 }
 
 /* Online Exam */
+body.exam-focus-mode #global-sidebar,
+body.exam-focus-mode header,
+body.exam-focus-mode #mobile-bottom-nav,
+body.exam-focus-mode #mascot-widget,
+body.exam-focus-mode #ghost-toast-area,
+body.exam-focus-mode #btn-scene-tab,
+body.exam-focus-mode #scene-panel {
+  display: none !important;
+}
+body.exam-focus-mode #main-views-container {
+  overflow: hidden;
+}
+body.exam-focus-mode #view-exam-room,
+body.exam-focus-mode #view-exam-result {
+  height: 100%;
+}
 .exam-subject-tab {
   border: 1px solid var(--border-color);
   background: var(--bg-card);

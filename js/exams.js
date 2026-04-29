@@ -889,6 +889,16 @@ function renderExamResult() {
   const percentage = grading.maxScore ? Math.round((grading.score / grading.maxScore) * 100) : 0;
   const passed = percentage >= Number(exam.passScore || 0);
   const canShowScore = exam.showResultAfterSubmit !== false;
+  const resultTitle = document.getElementById('exam-result-title');
+  const resultFrame = document.getElementById('exam-result-pdf-frame');
+  const resultOpenLink = document.getElementById('exam-result-pdf-open-link');
+
+  if (resultTitle) resultTitle.textContent = exam.title;
+  if (resultFrame) resultFrame.src = exam.pdfUrl || 'about:blank';
+  if (resultOpenLink) {
+    resultOpenLink.href = exam.pdfUrl || '#';
+    resultOpenLink.classList.toggle('pointer-events-none', !exam.pdfUrl);
+  }
 
   summary.innerHTML = `
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -897,7 +907,6 @@ function renderExamResult() {
         <h2 class="text-2xl font-black text-main mt-1">${escapeHTML(exam.title)}</h2>
         <p class="text-sm text-muted mt-2">Nộp lúc ${formatDateTime(submission.submittedAt)} · Thời gian làm bài ${formatDuration(submission.timeTaken)}</p>
       </div>
-      <button type="button" class="btn-secondary !py-2 !px-4 text-sm" onclick="window.changeMainView('view-exams')">Về danh sách đề</button>
     </div>
 
     ${canShowScore ? `
@@ -1023,6 +1032,18 @@ function cleanupExamSession(options = {}) {
   if (!options.keepResult) currentResult = null;
 }
 
+function setExamFocusMode(viewId) {
+  const active = viewId === 'view-exam-room' || viewId === 'view-exam-result';
+  document.body.classList.toggle('exam-focus-mode', active);
+
+  const sidebar = document.getElementById('global-sidebar');
+  const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
+  if (active) {
+    sidebar?.classList.add('hidden');
+    mobileOverlay?.classList.add('hidden');
+  }
+}
+
 function exitExamRoom() {
   if (!currentExam) {
     window.changeMainView('view-exams');
@@ -1052,6 +1073,7 @@ function installNavigationHook() {
     }
 
     originalChangeMainView(viewId, element);
+    setExamFocusMode(viewId);
     if (viewId === 'view-exams') setTimeout(() => loadExamHub(), 0);
   };
   hooked.__examHooked = true;
