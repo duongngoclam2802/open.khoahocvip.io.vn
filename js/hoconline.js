@@ -76,6 +76,65 @@ function showToast(msg, isError = false) {
 // ----------------------------------------------------
 // UI NAVIGATION
 // ----------------------------------------------------
+const VIEW_ROUTES = {
+  'view-dashboard': 'tong-quan',
+  'view-my-courses': 'khoa-hoc',
+  'view-profile': 'ho-so',
+  'view-discovery': 'kham-pha',
+  'view-docs': 'tai-lieu-pdf',
+  'view-exams': 'thi-online',
+  'view-news': 'tin-tuc',
+  'view-qa': 'hoi-dap'
+};
+
+const ROUTE_VIEWS = Object.entries(VIEW_ROUTES).reduce((routes, [viewId, slug]) => {
+  routes[slug] = viewId;
+  routes[viewId] = viewId;
+  return routes;
+}, {
+  dashboard: 'view-dashboard',
+  courses: 'view-my-courses',
+  profile: 'view-profile',
+  discovery: 'view-discovery',
+  docs: 'view-docs',
+  exams: 'view-exams',
+  news: 'view-news',
+  qa: 'view-qa'
+});
+
+function getRouteSlug() {
+  return decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim();
+}
+
+function getViewFromRoute() {
+  return ROUTE_VIEWS[getRouteSlug()] || null;
+}
+
+function syncUrlToView(viewId) {
+  const slug = VIEW_ROUTES[viewId];
+  if (!slug || getRouteSlug() === slug) return;
+  const nextUrl = `${window.location.pathname}${window.location.search}#${slug}`;
+  window.history.pushState({ viewId }, '', nextUrl);
+}
+
+function findSidebarItemForView(viewId) {
+  return [...document.querySelectorAll('.sidebar-item')].find((item) => {
+    const onclick = item.getAttribute('onclick') || '';
+    return onclick.includes(`'${viewId}'`) || onclick.includes(`"${viewId}"`);
+  });
+}
+
+function syncSidebarActive(viewId, element = null) {
+  const activeItem = element?.classList?.contains('sidebar-item') ? element : findSidebarItemForView(viewId);
+  if (!activeItem) return;
+  document.querySelectorAll('.sidebar-item').forEach(el => {
+    el.classList.remove('active', 'text-main');
+    el.classList.add('text-muted');
+  });
+  activeItem.classList.add('active', 'text-main');
+  activeItem.classList.remove('text-muted');
+}
+
 window.changeMainView = (viewId, element = null) => {
   haptic(5); // Trigger haptic on every nav
 
@@ -90,14 +149,7 @@ window.changeMainView = (viewId, element = null) => {
   // Use View Transitions if available
   const doNav = () => {
     // Update sidebar active state
-    if (element) {
-      document.querySelectorAll('.sidebar-item').forEach(el => {
-        el.classList.remove('active', 'text-main');
-        el.classList.add('text-muted');
-      });
-      element.classList.add('active', 'text-main');
-      element.classList.remove('text-muted');
-    }
+    syncSidebarActive(viewId, element);
 
     // Hide all views
     allViews.forEach(v => {
@@ -132,6 +184,8 @@ window.changeMainView = (viewId, element = null) => {
         btn.setAttribute('data-active', 'true');
       }
     });
+
+    syncUrlToView(viewId);
   };
 
   if (document.startViewTransition) {
@@ -140,6 +194,15 @@ window.changeMainView = (viewId, element = null) => {
     doNav();
   }
 };
+
+function openRouteFromUrl() {
+  const viewId = getViewFromRoute();
+  if (viewId && document.getElementById(viewId)) window.changeMainView(viewId);
+}
+
+window.addEventListener('hashchange', openRouteFromUrl);
+window.addEventListener('popstate', openRouteFromUrl);
+setTimeout(openRouteFromUrl, 0);
 
 
 // ----------------------------------------------------
@@ -298,6 +361,16 @@ async function saveProgressToServer() {
   } catch (e) { console.error(e); }
 }
 
+function isCourseFree(course) {
+  return course?.isFree === true;
+}
+
+function isCourseFullyUnlocked(course) {
+  const isAdmin = currentUser && currentUser.email === 'duongngoclam28022008@gmail.com';
+  const unlockedCourses = userProgress.unlockedCourses || [];
+  return isCourseFree(course) || (currentUser && (isAdmin || userIsWhitelisted || unlockedCourses.includes(course.id)));
+}
+
 function renderCourseGrid() {
   const dashGrid = document.getElementById('dashboard-course-grid');
   const myGrid = document.getElementById('my-courses-grid');
@@ -353,13 +426,12 @@ function renderCourseGrid() {
 
     // Determine unlock status
     // Rules:
-    //   1. Admin email → always unlocked
-    //   2. User is in allowed_users whitelist (with valid expiry) → unlocked
-    //   3. courseId is in user's unlockedCourses (activated via key) → unlocked
-    //   4. Course has at least 1 free-trial lecture → card shown normally (but playLecture still gate-checks each lecture)
-    const isAdmin = currentUser && currentUser.email === 'duongngoclam28022008@gmail.com';
-    const unlockedCourses = userProgress.unlockedCourses || [];
-    const isFullyUnlocked = currentUser && (isAdmin || userIsWhitelisted || unlockedCourses.includes(course.id));
+    //   1. Free course → always unlocked
+    //   2. Admin email → always unlocked
+    //   3. User is in allowed_users whitelist (with valid expiry) → unlocked
+    //   4. courseId is in user's unlockedCourses (activated via key) → unlocked
+    //   5. Course has at least 1 free-trial lecture → card shown normally (but playLecture still gate-checks each lecture)
+    const isFullyUnlocked = isCourseFullyUnlocked(course);
     // For card display: if course has free trial, show as semi-accessible (not locked overlay)
     const isUnlocked = isFullyUnlocked || (!currentUser ? false : hasFreeTrial);
 
@@ -392,7 +464,7 @@ function renderCourseGrid() {
             </div>
           </div>
         `}
-        ${hasFreeTrial ? '<div class="absolute top-2 left-2 bg-gradient-to-r from-orange-400 to-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg uppercase tracking-wider">Học thử</div>' : ''}
+        ${isCourseFree(course) ? '<div class="absolute top-2 left-2 bg-gradient-to-r from-green-400 to-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg uppercase tracking-wider">Miễn phí</div>' : (hasFreeTrial ? '<div class="absolute top-2 left-2 bg-gradient-to-r from-orange-400 to-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg uppercase tracking-wider">Học thử</div>' : '')}
         ${percent === 100 ? '<div class="absolute top-2 right-2 bg-gradient-to-r from-green-400 to-green-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg uppercase tracking-wider"><i data-lucide="check-circle" class="w-3 h-3 inline"></i> Hoàn thành</div>' : ''}
       </div>
       
@@ -401,6 +473,7 @@ function renderCourseGrid() {
           <h3 class="font-black text-lg text-main mb-1.5 ${isUnlocked ? 'group-hover:text-blue-500' : 'opacity-70'} transition-colors line-clamp-2">${course.title}</h3>
           <div class="flex items-center gap-4 text-xs text-muted mb-3 font-semibold">
             <span class="flex items-center gap-1 bg-blue-500/10 text-blue-600 px-2 py-1 rounded-md"><i data-lucide="play-circle" class="w-4 h-4"></i> ${totalLec} Bài giảng</span>
+            ${isCourseFree(course) ? '<span class="flex items-center gap-1 bg-green-500/10 text-green-600 px-2 py-1 rounded-md"><i data-lucide="unlock" class="w-4 h-4"></i> Miễn phí</span>' : ''}
             ${!isUnlocked ? '<span class="flex items-center gap-1 bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md"><i data-lucide="key" class="w-4 h-4"></i> Chưa kích hoạt</span>' : ''}
           </div>
         </div>
@@ -698,23 +771,23 @@ function renderOutline() {
 }
 
 function playLecture(lecture, topicTitle) {
-  // Gate 1: Not logged in → require login (even for free-trial, to track progress)
+  const freeCourse = isCourseFree(currentCourse);
+
+  // Gate 1: Not logged in → require login unless the lecture/course is free
   if (!currentUser) {
-    if (!lecture.isFreeTrial) {
-      // Non-free lecture: block, show login
+    if (!freeCourse && !lecture.isFreeTrial) {
+      // Non-free lecture in a paid course: block, show login
       pendingLecture = { courseId: currentCourse.id, lecture, topicTitle };
       loginOverlay.classList.remove('hidden');
       setTimeout(() => loginOverlay.classList.remove('opacity-0'), 10);
       return;
     }
-    // Free-trial: allow even without login (just play)
+    // Free course/free-trial: allow even without login (just play)
   }
 
   // Gate 2: Logged in but course not unlocked AND lecture not free-trial → block
   if (currentUser && !lecture.isFreeTrial) {
-    const isAdmin = currentUser.email === 'duongngoclam28022008@gmail.com';
-    const unlockedCourses = userProgress.unlockedCourses || [];
-    const isCourseUnlocked = isAdmin || userIsWhitelisted || unlockedCourses.includes(currentCourse.id);
+    const isCourseUnlocked = isCourseFullyUnlocked(currentCourse);
     if (!isCourseUnlocked) {
       // Show locked lecture UI in the player area
       showLockedLectureUI(lecture);
@@ -1747,7 +1820,7 @@ function buildSearchResults(query) {
     type: 'course', icon: 'book-open-check', iconBg: 'bg-orange-100 text-orange-500',
     title: c.title, sub: 'Khóa học',
     thumb: c.thumbnailUrl,
-    action: () => { if(currentUser) goToLearningView(c.id); else window.changeMainView('view-my-courses'); }
+    action: () => { if(currentUser || isCourseFree(c)) goToLearningView(c.id); else window.changeMainView('view-my-courses'); }
   }));
 
   // Docs
@@ -2338,6 +2411,3 @@ window._headerActivateKey = () => {
     }
   }, 350);
 };
-
-
-

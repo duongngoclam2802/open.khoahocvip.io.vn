@@ -193,7 +193,10 @@ async function loadCourses() {
     const div = document.createElement('div');
     div.className = 'glass-card bg-card p-4 rounded-2xl border border-theme flex flex-col gap-3';
     div.innerHTML = `
-      <div class="h-32 rounded-xl overflow-hidden relative"><img src="${thumb}" class="w-full h-full object-cover"></div>
+      <div class="h-32 rounded-xl overflow-hidden relative">
+        <img src="${thumb}" class="w-full h-full object-cover">
+        ${data.isFree ? '<span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow uppercase tracking-wider">Miễn phí</span>' : ''}
+      </div>
       <div><h3 class="font-bold text-main line-clamp-1">${data.title}</h3><p class="text-xs text-muted">${lecCount} bài giảng</p></div>
       <div class="flex gap-2 mt-auto pt-2 border-t border-theme">
         <button class="btn-secondary !py-1 !px-2 flex-1 text-xs font-bold" onclick="editCourse('${data.id}')">Sửa</button>
@@ -270,16 +273,18 @@ window.editCourse = (id) => {
   document.getElementById('modal-course-title').textContent = "Chỉnh Sửa Khóa Học";
   document.getElementById('course-name').value = editingCourse.title || "";
   document.getElementById('course-thumbnail').value = editingCourse.thumbnailUrl || "";
+  document.getElementById('course-is-free').checked = editingCourse.isFree === true;
   renderTopicsEditor();
   showCourseModal();
 };
 
 document.getElementById('btn-add-course').addEventListener('click', () => {
-  editingCourse = { title: "", thumbnailUrl: "", topics: [] };
+  editingCourse = { title: "", thumbnailUrl: "", isFree: false, topics: [] };
   window.editingCourse = editingCourse;
   document.getElementById('modal-course-title').textContent = "Thêm Khóa Học Mới";
   document.getElementById('course-name').value = "";
   document.getElementById('course-thumbnail').value = "";
+  document.getElementById('course-is-free').checked = false;
   renderTopicsEditor();
   showCourseModal();
 });
@@ -423,9 +428,11 @@ document.getElementById('btn-save-course').addEventListener('click', async (e) =
     
     window.editingCourse.title = document.getElementById('course-name').value || "Khóa học chưa đặt tên";
     window.editingCourse.thumbnailUrl = document.getElementById('course-thumbnail').value;
+    window.editingCourse.isFree = document.getElementById('course-is-free').checked;
     const payload = { 
       title: window.editingCourse.title, 
       thumbnailUrl: window.editingCourse.thumbnailUrl, 
+      isFree: window.editingCourse.isFree,
       topics: window.editingCourse.topics, 
       updatedAt: new Date().toISOString() 
     };
@@ -1403,7 +1410,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
 
 
 
