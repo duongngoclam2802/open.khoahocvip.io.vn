@@ -61,8 +61,8 @@
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-  <link rel="stylesheet" href="css/styles.css?v=video-mobile-stable-controls-20260430">
-  <script type="module" src="js/hoconline.js?v=video-mobile-stable-controls-20260430"></script>
+  <link rel="stylesheet" href="css/styles.css?v=restore-discovery-landing-20260430">
+  <script type="module" src="js/hoconline.js?v=restore-discovery-landing-20260430"></script>
   <script type="module" src="js/exams.js?v=mobile-pdf-viewer-20260429"></script>
 </head>
 <body class="bg-main text-main flex h-screen overflow-hidden transition-colors duration-500 font-sans">
@@ -1042,10 +1042,10 @@
 
                     <h2 class="section-heading mini" data-aos="fade-up">Hình Thức Học Tập</h2>
                     <div class="glass-card format-compact" data-aos="fade-up">
-                        <div class="format-mini-item"><i class='bx bx-laptop' style="color: #3498db;"></i> 100% Online</div>
-                        <div class="format-mini-item"><i class='bx bx-play-circle' style="color: #e74c3c;"></i> Video HD</div>
-                        <div class="format-mini-item"><i class='bx bx-file' style="color: #27ae60;"></i> PDF Chi Tiết</div>
-                        <div class="format-mini-item"><i class='bx bx-task' style="color: #f39c12;"></i> Thi Online</div>
+                        <div class="format-mini-item"><i class='bx bx-laptop' style="color: #3498db;"></i> Tặng Phòng Luyện</div>
+                        <div class="format-mini-item"><i class='bx bx-play-circle' style="color: #e74c3c;"></i> Học Online</div>
+                        <div class="format-mini-item"><i class='bx bx-file' style="color: #27ae60;"></i> Tài Liệu Chi Tiết</div>
+                        <div class="format-mini-item"><i class='bx bx-task' style="color: #f39c12;"></i> Bài Kiểm Tra Online</div>
                     </div>
                     <h2 class="section-heading" data-aos="fade-up">Vì sao chọn Combo 2K9?</h2>
                     
@@ -1082,15 +1082,6 @@
                         <div class="swipe-hint" style="margin-top: 15px; color: #e67e22;"><i class='bx bx-left-arrow-alt'></i> Bạn sẽ nhận được tất cả môn học và thầy cô trong môn học đó. <i class='bx bx-right-arrow-alt'></i></div>
                     </div>
 
-                    <h2 class="section-heading" data-aos="fade-up">Bài Giảng Học Thử</h2>
-                    <div class="video-slider" data-aos="fade-up">
-                        <div class="video-item" data-id="CQ75B9Z_O9Y"><div class="video-thumb" style="background-image: url('https://img.youtube.com/vi/CQ75B9Z_O9Y/hqdefault.jpg');"></div><div class="play-overlay"><div class="play-btn-custom"><i class='bx bx-play'></i></div></div></div>
-                        <div class="video-item" data-id="2SuzM5pp8us"><div class="video-thumb" style="background-image: url('https://img.youtube.com/vi/2SuzM5pp8us/hqdefault.jpg');"></div><div class="play-overlay"><div class="play-btn-custom"><i class='bx bx-play'></i></div></div></div>
-                        <div class="video-item" data-id="RLnRRQnf40E"><div class="video-thumb" style="background-image: url('https://img.youtube.com/vi/RLnRRQnf40E/hqdefault.jpg');"></div><div class="play-overlay"><div class="play-btn-custom"><i class='bx bx-play'></i></div></div></div>
-                        <div class="video-item" data-id="Het--I4eleI"><div class="video-thumb" style="background-image: url('https://img.youtube.com/vi/Het--I4eleI/hqdefault.jpg');"></div><div class="play-overlay"><div class="play-btn-custom"><i class='bx bx-play'></i></div></div></div>
-                    </div>
-                    <div class="swipe-hint" data-aos="fade-up" style="margin-top: 5px;"><i class='bx bx-left-arrow-alt'></i> Vuốt ngang để xem thêm <i class='bx bx-right-arrow-alt'></i></div>
-
                     <div class="pricing-box" data-aos="zoom-in">
                         <div class="price-title">GIÁ TOÀN BỘ KHÓA HỌC: 8 MÔN + ĐGNL + ĐGTD</div>
                         <div class="price-amount">350K</div>
@@ -1102,8 +1093,14 @@
                             <li><i class='bx bx-check-circle'></i> <span>Toàn bộ khóa lớp 10 2K10 (2026)</span></li>
                             <li><i class='bx bx-check-circle'></i> <span>Bao gồm tất cả các môn, và tất cả các thầy cô, trung tâm trên cả nước.</span></li>
                         </ul>
-                        <a href="https://zalo.me/0327359035" target="_blank" class="btn-register mt-8">Đăng ký ngay <i class='bx bx-right-arrow-alt'></i></a>
                     </div>
+
+                    <div class="btn-container" data-aos="zoom-in-up">
+                        <a href="https://zalo.me/0327359035" target="_blank" class="btn-register"><i class='bx bx-paper-plane'></i> Đăng ký ngay</a>
+                    </div>
+
+                    <div class="footer-text" data-aos="fade-in">CHÚC CÁC EM HỌC TỐT</div>
+                    <div class="domain-watermark" data-aos="fade-in">Hệ thống: khoahocvip.io.vn</div>
                     
                 </div>
             </div>
@@ -1112,13 +1109,6 @@
                 // This script handles the interaction for the discovery landing section
                 setTimeout(() => {
                     if (window.AOS) AOS.init({ once: true, offset: 10, easing: 'ease-out-cubic', duration: 800 });
-
-                    document.querySelectorAll('.video-item').forEach(item => {
-                        item.addEventListener('click', function() {
-                            let videoId = this.getAttribute('data-id');
-                            this.innerHTML = `<iframe sandbox="allow-scripts allow-same-origin allow-presentation" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&fs=0&iv_load_policy=3&playsinline=1" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width: 100%; height: 100%; border: none; border-radius: 16px;"></iframe>`;
-                        });
-                    });
 
                     const courseData = {
                         bonus: [
@@ -1272,11 +1262,6 @@
             </script>
         </div>
 
-        <div class="mt-8 border-t border-theme pt-8">
-            <h2 class="text-xl font-bold text-main mb-6 px-4">Bài viết & Video Khám phá khác</h2>
-            <div id="discovery-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                <div class="loader mx-auto col-span-full"></div>
-            </div> <!-- End discovery-grid -->
           </div> <!-- End content-container -->
         </div> <!-- End view-content-wrapper -->
       </main>
@@ -1341,11 +1326,6 @@
                     <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
                   </button>
                 </div>
-                <!-- Lofi Music -->
-                <button id="btn-lofi" class="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-xl px-3 py-1.5 text-sm font-bold hover:bg-purple-500/20 transition-colors" title="Nhạc tập trung Lofi">
-                  <span id="lofi-wave" class="lofi-wave-idle">🎵</span>
-                  <span class="hidden sm:inline">Lofi</span>
-                </button>
               </div>
               
               <div class="flex items-center gap-3 w-full sm:w-64 bg-card p-3 rounded-2xl border border-theme shadow-sm">
@@ -2005,54 +1985,40 @@
       render();
     })();
 
-    // ---- 8. LOFI MUSIC ----
-    (function() {
-      const LOFI_TRACKS = [
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      ];
-      let audio = null;
-      let isPlaying = false;
-      const btn = document.getElementById('btn-lofi');
-      const wave = document.getElementById('lofi-wave');
-
-      if (btn) btn.addEventListener('click', () => {
-        window.hapticFeedback([30]);
-        if (!audio) {
-          audio = new Audio(LOFI_TRACKS[0]);
-          audio.loop = true;
-          audio.volume = 0.3;
-        }
-        isPlaying = !isPlaying;
-        if (isPlaying) {
-          audio.play().catch(() => {});
-          btn.classList.add('bg-purple-500/30', '!border-purple-500');
-          if (wave) { wave.textContent = '🎶'; wave.classList.add('lofi-playing'); }
-        } else {
-          audio.pause();
-          btn.classList.remove('bg-purple-500/30', '!border-purple-500');
-          if (wave) { wave.textContent = '🎵'; wave.classList.remove('lofi-playing'); }
-        }
-      });
-    })();
-
-    // ---- 9. FOCUS LIGHT MODE ----
+    // ---- 8. FOCUS LIGHT MODE ----
     (function() {
       const btn = document.getElementById('btn-focus-light');
-      let overlay = document.createElement('div');
-      overlay.id = 'focus-light-overlay';
-      document.body.appendChild(overlay);
+      let overlay = document.getElementById('focus-light-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'focus-light-overlay';
+        document.body.appendChild(overlay);
+      }
       let active = false;
 
-      if (btn) btn.addEventListener('click', () => {
-        active = !active;
+      function setFocusLight(nextActive) {
+        active = nextActive;
         overlay.classList.toggle('active', active);
-        btn.classList.toggle('bg-yellow-500/30', active);
-        btn.classList.toggle('text-yellow-400', active);
+        document.body.classList.toggle('focus-light-active', active);
+        btn?.classList.toggle('bg-yellow-500/30', active);
+        btn?.classList.toggle('text-yellow-400', active);
+      }
+
+      if (btn) btn.addEventListener('click', () => {
+        setFocusLight(!active);
         window.hapticFeedback([20, 20]);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && active) setFocusLight(false);
+      });
+
+      window.addEventListener('hashchange', () => {
+        if (!location.hash.includes('learning')) setFocusLight(false);
       });
     })();
 
-    // ---- 10. TIMESTAMP TAGGING ----
+    // ---- 9. TIMESTAMP TAGGING ----
     (function() {
       const btnTs = document.getElementById('btn-timestamp');
       const notebook = document.getElementById('notebook-textarea');
@@ -2479,7 +2445,7 @@
       const ACTIONS = [
         (city) => `Một bạn ở ${city} vừa hoàn thành bài học này ✅`,
         (city) => `Bạn từ ${city} vừa đạt ${Math.floor(Math.random()*200+100)} XP 🏆`,
-        () => `Có ${Math.floor(Math.random()*20+8)} bạn đang nghe Lofi cùng bạn 🎵`,
+        () => `Có ${Math.floor(Math.random()*20+8)} bạn đang học cùng bạn lúc này`,
         (city) => `Bạn ở ${city} vừa mở khóa huy hiệu "Cần cù" 🔥`,
         () => `${Math.floor(Math.random()*5+2)} bạn đang học bài này ngay lúc này 👥`,
         (city) => `Thủ khoa ở ${city} vừa review bài học này ⭐`,
@@ -2549,4 +2515,3 @@
   </script>
 </body>
 </html>
-
