@@ -700,7 +700,6 @@ input[type="date"].input-glass::-webkit-calendar-picker-indicator {
 }
 .video-player-shell:fullscreen .youtube-chrome-mask,
 .video-player-shell.video-pseudo-fullscreen .youtube-chrome-mask {
-  opacity: 1;
   height: 124px;
 }
 .youtube-chrome-mask {
@@ -1139,6 +1138,8 @@ body.focus-mode .focus-hide {
 .combo-landing .btn-register:active, .combo-landing .btn-register:hover { transform: scale(0.96); box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);}
 .combo-landing .btn-register::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: sweepShimmer 3s infinite; }
 @keyframes sweepShimmer { 0% { left: -100%; } 100% { left: 100%; } }
+.combo-landing .footer-text { text-align: center; font-size: 14px; font-weight: 800; color: #636e72; text-transform: uppercase; letter-spacing: 1.5px; }
+.combo-landing .domain-watermark { text-align: center; font-size: 12px; color: rgba(0, 0, 0, 0.3); margin-top: 8px; font-weight: 600; padding-bottom: 20px;}
 
 @media (max-width: 991px) {
     .combo-landing .app-container { max-width: 480px; padding: 30px 15px 40px 15px; }
@@ -1149,7 +1150,9 @@ body.focus-mode .focus-hide {
     .combo-landing .trust-list { margin-bottom: 25px; }
     .combo-landing .section-heading { font-size: 18px; }
     .combo-landing .pricing-box { margin-top: 35px; }
+    .combo-landing .btn-container { margin-top: 35px; margin-bottom: 25px; }
     .combo-landing .btn-register { font-size: 18px; padding: 18px 20px; }
+    .combo-landing .footer-text { margin-top: 25px; }
 }
 @media (min-width: 992px) {
     .combo-landing .app-container { max-width: 1100px; padding: 50px 20px; }
@@ -1174,7 +1177,9 @@ body.focus-mode .focus-hide {
     .combo-landing .price-title { font-size: 18px; }
     .combo-landing .price-amount { font-size: 64px; }
     .combo-landing .pricing-list li { font-size: 16px; margin-bottom: 15px; }
+    .combo-landing .btn-container { max-width: 500px; margin: 40px auto; }
     .combo-landing .btn-register { font-size: 22px; padding: 22px 30px; border-radius: 60px; }
+    .combo-landing .footer-text { font-size: 16px; margin-top: 50px; }
 }
 
 /* ========================================================
@@ -2410,18 +2415,6 @@ body.use-custom-cursor * { cursor: none !important; }
 }
 
 /* ========================================================
-   LOFI MUSIC WAVE ANIMATION
-   ======================================================== */
-
-@keyframes lofi-wave-anim {
-  0%, 100% { letter-spacing: 0; }
-  50% { letter-spacing: 2px; }
-}
-.lofi-playing {
-  animation: lofi-wave-anim 1.5s ease-in-out infinite;
-}
-
-/* ========================================================
    STUDY BUDDY WIDGET
    ======================================================== */
 
@@ -2453,6 +2446,16 @@ body.use-custom-cursor * { cursor: none !important; }
 
 /* Video stays bright */
 #video-container-wrap { position: relative; z-index: 155; }
+body.focus-light-active #video-player-shell,
+body.focus-light-active #video-container-wrap,
+body.focus-light-active #custom-player-controls {
+  position: relative;
+  z-index: 175;
+}
+body.focus-light-active #btn-focus-light {
+  position: relative;
+  z-index: 176;
+}
 
 /* ========================================================
    ANIMATED LIVE PROGRESS BAR (Learning View)
@@ -2564,12 +2567,6 @@ body.use-custom-cursor * { cursor: none !important; }
   100% { transform: scale(1) rotate(0deg); }
 }
 .streak-bounce { animation: streak-bounce-in 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
-
-/* ========================================================
-   LOFI AUDIO ELEMENT (hidden)
-   ======================================================== */
-
-#lofi-audio { display: none; }
 
 /* ========================================================
    PARALLAX 3D STACK — Card inner layers float on Z axis
@@ -3493,5 +3490,243 @@ body.video-fullscreen-active #main-views-container {
   .speed-toggle {
     height: 46px;
     min-width: 72px;
+  }
+}
+
+/* Mobile fullscreen viewport fixes */
+body.video-fullscreen-active #view-learning,
+body.video-fullscreen-active .main-view {
+  will-change: auto !important;
+  transform: none !important;
+}
+
+body.video-fullscreen-active #main-views-container {
+  overscroll-behavior: none;
+}
+
+.video-player-shell:fullscreen,
+.video-player-shell.video-pseudo-fullscreen {
+  position: fixed !important;
+  inset: auto !important;
+  top: var(--video-vy, 0px) !important;
+  left: var(--video-vx, 0px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: var(--video-vw, 100vw) !important;
+  height: var(--video-vh, 100vh) !important;
+  min-height: var(--video-vh, 100vh) !important;
+  max-height: var(--video-vh, 100vh) !important;
+  margin: 0 !important;
+  padding: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) !important;
+  box-sizing: border-box !important;
+  border-radius: 0 !important;
+  background: #050505 !important;
+  z-index: 2147483000 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+@supports (height: 100dvh) {
+  .video-player-shell:fullscreen {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+  .video-player-shell.video-pseudo-fullscreen {
+    height: var(--video-vh, 100dvh) !important;
+    min-height: var(--video-vh, 100dvh) !important;
+    max-height: var(--video-vh, 100dvh) !important;
+  }
+}
+
+.video-player-shell:fullscreen .video-container,
+.video-player-shell.video-pseudo-fullscreen .video-container {
+  position: relative !important;
+  width: min(calc(var(--video-vw, 100vw) - 16px), 1120px) !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 100% !important;
+  padding-bottom: 0 !important;
+  aspect-ratio: 16 / 9;
+  margin: 0 !important;
+  border-radius: clamp(10px, 2vw, 18px) !important;
+  box-shadow: none !important;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .video-player-shell:fullscreen,
+  .video-player-shell.video-pseudo-fullscreen {
+    padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  .video-player-shell:fullscreen .video-container,
+  .video-player-shell.video-pseudo-fullscreen .video-container {
+    width: auto !important;
+    height: calc(var(--video-vh, 100vh) - 12px) !important;
+    max-width: calc(var(--video-vw, 100vw) - 12px) !important;
+    max-height: calc(var(--video-vh, 100vh) - 12px) !important;
+  }
+
+  .video-player-shell:fullscreen .custom-player-overlay,
+  .video-player-shell.video-pseudo-fullscreen .custom-player-overlay {
+    bottom: max(6px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .custom-player-inner {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .player-controls-row {
+    gap: 6px;
+  }
+
+  .player-ctrl-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .player-play-btn {
+    width: 50px;
+    height: 50px;
+  }
+
+  .speed-toggle {
+    height: 42px;
+    min-width: 66px;
+    padding: 0 10px;
+  }
+
+  .video-player-shell:fullscreen .youtube-chrome-mask,
+  .video-player-shell.video-pseudo-fullscreen .youtube-chrome-mask {
+    height: 72px;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .speed-menu {
+    left: 50%;
+    right: auto;
+    width: min(calc(100vw - 24px), 340px);
+    transform: translateX(-50%);
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 18px;
+  }
+}
+
+.video-player-shell.video-pseudo-fullscreen .video-container {
+  width: var(--video-box-w, calc(var(--video-vw, 100vw) - 16px)) !important;
+  height: var(--video-box-h, auto) !important;
+  max-width: calc(var(--video-vw, 100vw) - 12px) !important;
+  max-height: calc(var(--video-vh, 100vh) - 12px) !important;
+}
+
+.video-player-shell:fullscreen .youtube-chrome-mask,
+.video-player-shell.video-pseudo-fullscreen .youtube-chrome-mask {
+  opacity: 0;
+}
+
+.video-player-shell:fullscreen .video-container.youtube-mask-visible .youtube-chrome-mask,
+.video-player-shell.video-pseudo-fullscreen .video-container.youtube-mask-visible .youtube-chrome-mask {
+  opacity: 1;
+}
+
+/* Desktop fullscreen should fill the screen much more aggressively */
+@media (hover: hover) and (pointer: fine) {
+  .video-player-shell:fullscreen {
+    padding: 6px !important;
+  }
+
+  .video-player-shell:fullscreen .video-container {
+    width: min(calc(100vw - 12px), 175vh) !important;
+    max-width: calc(100vw - 12px) !important;
+    max-height: calc(100vh - 12px) !important;
+    border-radius: 10px !important;
+  }
+
+  @supports (height: 100dvh) {
+    .video-player-shell:fullscreen .video-container {
+      width: min(calc(100vw - 12px), 175dvh) !important;
+      max-height: calc(100dvh - 12px) !important;
+    }
+  }
+}
+
+/* On portrait phones, keep controls below the video instead of covering it */
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+  .video-player-shell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .video-player-shell .custom-player-overlay {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    align-self: center;
+    width: min(calc(100% - 12px), 360px);
+    max-height: 0;
+    margin: 0 !important;
+    transform: translateY(-4px);
+    overflow: hidden;
+  }
+
+  .video-player-shell .custom-player-overlay.visible {
+    max-height: 104px;
+    transform: translateY(0);
+    overflow: visible;
+  }
+
+  .video-player-shell:fullscreen,
+  .video-player-shell.video-pseudo-fullscreen {
+    gap: 8px !important;
+  }
+
+  .custom-player-inner {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .player-controls-row {
+    gap: 5px;
+    padding: 4px;
+  }
+
+  .player-ctrl-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .player-play-btn {
+    width: 46px;
+    height: 46px;
+  }
+
+  .player-ctrl-btn span {
+    font-size: 9px;
+  }
+
+  .speed-toggle {
+    height: 38px;
+    min-width: 58px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .speed-toggle > i:first-child {
+    display: none;
+  }
+
+  .speed-menu {
+    top: calc(100% + 8px);
+    bottom: auto;
   }
 }
