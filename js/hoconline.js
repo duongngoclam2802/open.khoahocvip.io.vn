@@ -84,7 +84,8 @@ const VIEW_ROUTES = {
   'view-docs': 'tai-lieu-pdf',
   'view-exams': 'thi-online',
   'view-news': 'tin-tuc',
-  'view-qa': 'hoi-dap'
+  'view-qa': 'hoi-dap',
+  'view-bundle-courses': 'khoa-hoc-lon'
 };
 
 const ROUTE_VIEWS = Object.entries(VIEW_ROUTES).reduce((routes, [viewId, slug]) => {
@@ -99,7 +100,8 @@ const ROUTE_VIEWS = Object.entries(VIEW_ROUTES).reduce((routes, [viewId, slug]) 
   docs: 'view-docs',
   exams: 'view-exams',
   news: 'view-news',
-  qa: 'view-qa'
+  qa: 'view-qa',
+  bundle: 'view-bundle-courses'
 });
 
 function getRouteSlug() {
@@ -134,6 +136,80 @@ function syncSidebarActive(viewId, element = null) {
   activeItem.classList.add('active', 'text-main');
   activeItem.classList.remove('text-muted');
 }
+
+window.openBundleView = (bundleCourse) => {
+  if (!bundleCourse || !bundleCourse.subCourseIds) return;
+  const bundleTitleEl = document.getElementById('bundle-courses-title');
+  if (bundleTitleEl) bundleTitleEl.textContent = bundleCourse.title;
+
+  const bundleGrid = document.getElementById('bundle-courses-grid');
+  if (bundleGrid) {
+    bundleGrid.innerHTML = '';
+    const subCourses = allCourses.filter(c => bundleCourse.subCourseIds.includes(c.id));
+    if (subCourses.length === 0) {
+      bundleGrid.innerHTML = '<p class="text-muted col-span-full">Khóa học lớn này chưa có khóa học nhỏ nào.</p>';
+    } else {
+      subCourses.forEach((subCourse, idx) => {
+        const isUnlocked = isCourseFullyUnlocked(subCourse);
+        
+        let totalLec = 0;
+        let percent = 0;
+        let pData = { completedLectures: [] };
+        if (subCourse.topics) {
+          subCourse.topics.forEach(t => { if (t.lectures) totalLec += t.lectures.length; });
+        }
+        if (currentUser && userProgress.courses[subCourse.id]) {
+          pData = userProgress.courses[subCourse.id];
+        }
+        percent = totalLec === 0 ? 0 : Math.round(((pData.completedLectures || []).length / totalLec) * 100);
+        
+        const card = document.createElement('div');
+        card.className = 'bg-card p-4 rounded-3xl border border-theme hover:-translate-y-2 transition-all duration-300 cursor-pointer flex flex-col sm:flex-row gap-5 relative group shadow-sm hover:shadow-xl';
+        card.style.animationDelay = `${idx * 0.1}s`;
+        
+        const thumb = subCourse.thumbnailUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop';
+        
+        card.innerHTML = `
+          <div class="h-32 sm:w-48 shrink-0 relative rounded-2xl overflow-hidden group-hover:shadow-lg transition-shadow z-10">
+            <img src="${thumb}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out ${!isUnlocked ? 'brightness-50' : ''}">
+            ${!isUnlocked ? '<div class="absolute inset-0 flex flex-col items-center justify-center bg-black/40"><i data-lucide="lock" class="w-5 h-5 text-white mb-1"></i><span class="text-[10px] text-white font-bold">Khóa</span></div>' : '<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-50 group-hover:scale-100"><div class="w-12 h-12 bg-white/90 backdrop-blur-sm text-blue-600 rounded-full flex items-center justify-center shadow-xl"><i data-lucide="play" class="w-6 h-6 ml-1"></i></div></div>'}
+          </div>
+          <div class="flex-1 flex flex-col justify-between py-1 z-10">
+            <div>
+              <h3 class="font-black text-lg text-main mb-1.5 transition-colors line-clamp-2">${subCourse.title}</h3>
+              <div class="flex items-center gap-4 text-xs text-muted mb-3 font-semibold">
+                <span class="flex items-center gap-1 bg-blue-500/10 text-blue-600 px-2 py-1 rounded-md"><i data-lucide="play-circle" class="w-4 h-4"></i> ${totalLec} Bài giảng</span>
+                ${!isUnlocked ? '<span class="flex items-center gap-1 bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md"><i data-lucide="key" class="w-4 h-4"></i> Chưa có quyền</span>' : ''}
+              </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-theme mt-auto">
+              <div class="flex justify-between text-[11px] font-bold mb-2">
+                <span class="text-muted uppercase flex items-center gap-1">Tiến độ</span>
+                <span class="text-blue-500 font-black">${percent}%</span>
+              </div>
+              <div class="bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                <div class="bg-blue-500 h-full rounded-full transition-all duration-1000" style="width: ${percent}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        card.addEventListener('click', () => {
+          if (!isUnlocked) {
+            showToast('Bạn chưa được cấp quyền học khóa này!');
+            return;
+          }
+          goToLearningView(subCourse.id);
+        });
+        
+        bundleGrid.appendChild(card);
+      });
+      lucide.createIcons({root: bundleGrid});
+    }
+  }
+
+  window.changeMainView('view-bundle-courses');
+};
 
 window.changeMainView = (viewId, element = null) => {
   haptic(5); // Trigger haptic on every nav
@@ -371,7 +447,22 @@ function isCourseFree(course) {
 function isCourseFullyUnlocked(course) {
   const isAdmin = currentUser && currentUser.email === 'duongngoclam28022008@gmail.com';
   const unlockedCourses = userProgress.unlockedCourses || [];
-  return isCourseFree(course) || (currentUser && (isAdmin || userIsWhitelisted || unlockedCourses.includes(course.id)));
+  
+  if (isCourseFree(course) || (currentUser && (isAdmin || userIsWhitelisted || unlockedCourses.includes(course.id)))) {
+    return true;
+  }
+  
+  // Check if course is part of an unlocked bundle
+  if (currentUser && !course.isBundle && allCourses.length > 0) {
+    const parentBundles = allCourses.filter(c => c.isBundle && c.subCourseIds && c.subCourseIds.includes(course.id));
+    for (const bundle of parentBundles) {
+      if (isCourseFree(bundle) || unlockedCourses.includes(bundle.id)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
 }
 
 function renderCourseGrid() {
@@ -410,23 +501,49 @@ function renderCourseGrid() {
   const generateCardHtml = (course, idx, isGrid) => {
     let hasFreeTrial = false;
     let totalLec = 0;
-    if (course.topics) {
-      course.topics.forEach(t => {
-        if(t.lectures) {
-          totalLec += t.lectures.length;
-          t.lectures.forEach(l => { if(l.isFreeTrial) hasFreeTrial = true; });
-        }
-      });
+    let percent = 0;
+    let pData = { completedLectures: [] };
+    
+    if (course.isBundle) {
+      const subCourseCount = course.subCourseIds ? course.subCourseIds.length : 0;
+      let totalBundleLec = 0;
+      let completedBundleLec = 0;
+      
+      if (course.subCourseIds) {
+        course.subCourseIds.forEach(subId => {
+          const sub = allCourses.find(c => c.id === subId);
+          if (sub && sub.topics) {
+            sub.topics.forEach(t => {
+              if (t.lectures) {
+                totalBundleLec += t.lectures.length;
+                t.lectures.forEach(l => { if (l.isFreeTrial) hasFreeTrial = true; });
+              }
+            });
+          }
+          if (currentUser && userProgress.courses[subId]) {
+            completedBundleLec += (userProgress.courses[subId].completedLectures || []).length;
+          }
+        });
+      }
+      totalLec = totalBundleLec;
+      percent = totalLec === 0 ? 0 : Math.round((completedBundleLec / totalLec) * 100);
+    } else {
+      if (course.topics) {
+        course.topics.forEach(t => {
+          if(t.lectures) {
+            totalLec += t.lectures.length;
+            t.lectures.forEach(l => { if(l.isFreeTrial) hasFreeTrial = true; });
+          }
+        });
+      }
+      if (currentUser && userProgress.courses[course.id]) {
+        pData = userProgress.courses[course.id];
+      }
+      percent = totalLec === 0 ? 0 : Math.round(((pData.completedLectures || []).length / totalLec) * 100);
     }
 
     const thumb = course.thumbnailUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop';
     
-    let pData = { completedLectures: [] };
-    if (currentUser && userProgress.courses[course.id]) {
-      pData = userProgress.courses[course.id];
-    }
-    const percent = totalLec === 0 ? 0 : Math.round((pData.completedLectures.length / totalLec) * 100);
-
     // Determine unlock status
     // Rules:
     //   1. Free course → always unlocked
@@ -475,7 +592,7 @@ function renderCourseGrid() {
         <div>
           <h3 class="font-black text-lg text-main mb-1.5 ${isUnlocked ? 'group-hover:text-blue-500' : 'opacity-70'} transition-colors line-clamp-2">${course.title}</h3>
           <div class="flex items-center gap-4 text-xs text-muted mb-3 font-semibold">
-            <span class="flex items-center gap-1 bg-blue-500/10 text-blue-600 px-2 py-1 rounded-md"><i data-lucide="play-circle" class="w-4 h-4"></i> ${totalLec} Bài giảng</span>
+            ${course.isBundle ? `<span class="flex items-center gap-1 bg-purple-500/10 text-purple-600 px-2 py-1 rounded-md"><i data-lucide="layers" class="w-4 h-4"></i> ${course.subCourseIds ? course.subCourseIds.length : 0} Khóa nhỏ</span>` : `<span class="flex items-center gap-1 bg-blue-500/10 text-blue-600 px-2 py-1 rounded-md"><i data-lucide="play-circle" class="w-4 h-4"></i> ${totalLec} Bài giảng</span>`}
             ${isCourseFree(course) ? '<span class="flex items-center gap-1 bg-green-500/10 text-green-600 px-2 py-1 rounded-md"><i data-lucide="unlock" class="w-4 h-4"></i> Miễn phí</span>' : ''}
             ${!isUnlocked ? '<span class="flex items-center gap-1 bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md"><i data-lucide="key" class="w-4 h-4"></i> Chưa kích hoạt</span>' : ''}
           </div>
@@ -514,7 +631,11 @@ function renderCourseGrid() {
         setTimeout(() => document.getElementById('activation-key-input')?.focus(), 400);
         return;
       }
-      goToLearningView(course.id);
+      if (course.isBundle) {
+        window.openBundleView(course);
+      } else {
+        goToLearningView(course.id);
+      }
     });
     
     // Set dataset for filtering

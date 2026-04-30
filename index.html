@@ -574,6 +574,32 @@
       </main>
 
       <!-- ============================================== -->
+      <!-- VIEW: BUNDLE COURSES (Sub-courses inside a Bundle) -->
+      <!-- ============================================== -->
+      <main id="view-bundle-courses" class="main-view transition-all duration-500 hidden">
+        <div class="view-content-wrapper">
+          <div class="content-container flex flex-col gap-8">
+            <div class="flex items-center gap-4 border-b border-theme pb-4">
+              <button onclick="window.changeMainView('view-my-courses')" class="p-2 text-muted hover:text-main hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+              </button>
+              <div class="p-3 bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 rounded-xl shadow-inner">
+                <i data-lucide="layers" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <p class="text-[10px] uppercase tracking-widest text-muted font-bold">Khóa Học Lớn</p>
+                <h2 id="bundle-courses-title" class="text-2xl font-black text-main">...</h2>
+              </div>
+            </div>
+            
+            <div id="bundle-courses-grid" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
+              <!-- Grid items will be populated via JS -->
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ============================================== -->
       <!-- VIEW: ONLINE EXAMS -->
       <!-- ============================================== -->
       <main id="view-exams" class="main-view transition-all duration-500 hidden">

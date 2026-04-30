@@ -167,9 +167,14 @@
           <h2 class="text-lg font-bold flex items-center gap-2 text-main">
             <i data-lucide="library" class="text-primary"></i> Quản lý Khóa Học
           </h2>
-          <button id="btn-add-course" class="btn-primary flex items-center gap-2 text-sm">
-            <i data-lucide="plus" class="w-4 h-4"></i> Thêm Khóa Mới
-          </button>
+          <div class="flex gap-2">
+            <button id="btn-add-bundle" class="btn-secondary flex items-center gap-2 text-sm border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+              <i data-lucide="folder-kanban" class="w-4 h-4"></i> Thêm Khóa Lớn
+            </button>
+            <button id="btn-add-course" class="btn-primary flex items-center gap-2 text-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i> Thêm Khóa Mới
+            </button>
+          </div>
         </div>
         <div id="courses-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
       </div>
@@ -538,6 +543,61 @@
 
         <button id="btn-confirm-manual-activate" class="w-full btn-primary flex items-center justify-center gap-2 font-bold">
           <i data-lucide="zap" class="w-4 h-4"></i> Kích hoạt ngay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Bundle Editor -->
+  <div id="modal-bundle" class="admin-editor-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-start justify-center opacity-0 transition-opacity">
+    <div class="admin-editor-panel glass-card bg-card w-full max-w-4xl flex flex-col shadow-2xl rounded-3xl overflow-hidden border border-theme">
+      <div class="p-5 border-b border-theme flex justify-between items-center bg-card shrink-0">
+        <h3 class="text-xl font-bold text-main" id="modal-bundle-title">Thêm Khóa Học Lớn</h3>
+        <button id="btn-close-bundle-modal" class="text-muted hover:text-red-500 transition-colors bg-gray-100 dark:bg-gray-800 p-2 rounded-full">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-6 bg-slate-50 dark:bg-slate-900/50">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 glass-card p-6 bg-card rounded-2xl border border-theme">
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Tên Khóa Học Lớn</label>
+            <input type="text" id="bundle-name" class="input-glass" placeholder="VD: Trọn bộ Lập trình Web">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Thumbnail URL</label>
+            <div class="flex gap-2">
+              <input type="text" id="bundle-thumbnail" class="input-glass" placeholder="https://...">
+              <label class="btn-secondary !p-2 flex items-center justify-center cursor-pointer" title="Tải ảnh lên">
+                <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                <input type="file" class="hidden" accept="image/*" id="upload-bundle-thumbnail-input">
+              </label>
+            </div>
+            <div id="bundle-thumbnail-progress" class="h-1 bg-theme rounded-full hidden mt-2"><div class="h-full bg-primary w-0 transition-all"></div></div>
+          </div>
+          <label class="md:col-span-2 flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-2xl cursor-pointer hover:border-green-500/50 transition-colors">
+            <input type="checkbox" id="bundle-is-free" class="mt-1 w-4 h-4 accent-green-500 cursor-pointer">
+            <span>
+              <span class="block text-sm font-black text-main">Miễn phí cho tất cả người dùng</span>
+              <span class="block text-xs text-muted mt-1">Khi bật, mọi người có thể vào khóa học lớn này mà không cần mã kích hoạt.</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="glass-card p-6 bg-card rounded-2xl border border-theme">
+          <h4 class="font-bold text-main text-lg mb-4 flex items-center gap-2">
+            <i data-lucide="layers" class="text-primary w-5 h-5"></i> Chọn các khóa học nhỏ (Sub-courses)
+          </h4>
+          <div id="bundle-courses-checkboxes" class="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+            <p class="text-muted text-sm">Đang tải danh sách khóa học...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-5 border-t border-theme bg-card flex justify-end gap-3 shrink-0">
+        <button id="btn-cancel-bundle" class="btn-secondary font-bold">Hủy</button>
+        <button id="btn-save-bundle" class="btn-primary flex items-center gap-2 font-bold shadow-lg shadow-primary/30">
+          <i data-lucide="save" class="w-4 h-4"></i> Lưu Khóa Học Lớn
         </button>
       </div>
     </div>

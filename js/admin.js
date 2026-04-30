@@ -192,19 +192,28 @@ async function loadCourses() {
     const data = d.data(); data.id = d.id;
     currentCourses.push(data);
     let lecCount = 0;
-    if(data.topics) data.topics.forEach(t => { if(t.lectures) { lecCount += t.lectures.length; totalLec += t.lectures.length; }});
+    if(data.isBundle) {
+      // Bundles don't directly have lectures
+    } else {
+      if(data.topics) data.topics.forEach(t => { if(t.lectures) { lecCount += t.lectures.length; totalLec += t.lectures.length; }});
+    }
     const thumb = data.thumbnailUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop';
     
     const div = document.createElement('div');
-    div.className = 'glass-card bg-card p-4 rounded-2xl border border-theme flex flex-col gap-3';
+    div.className = 'glass-card bg-card p-4 rounded-2xl border border-theme flex flex-col gap-3 relative';
+    
+    const badgeHtml = data.isBundle ? '<span class="absolute top-2 right-2 bg-purple-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow uppercase tracking-wider z-10"><i data-lucide="layers" class="w-3 h-3 inline"></i> Khóa Học Lớn</span>' : '';
+    const subtextHtml = data.isBundle ? `<p class="text-xs text-muted">${data.subCourseIds ? data.subCourseIds.length : 0} khóa học con</p>` : `<p class="text-xs text-muted">${lecCount} bài giảng</p>`;
+
     div.innerHTML = `
       <div class="h-32 rounded-xl overflow-hidden relative">
         <img src="${thumb}" class="w-full h-full object-cover">
-        ${data.isFree ? '<span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow uppercase tracking-wider">Miễn phí</span>' : ''}
+        ${data.isFree ? '<span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow uppercase tracking-wider z-10">Miễn phí</span>' : ''}
+        ${badgeHtml}
       </div>
-      <div><h3 class="font-bold text-main line-clamp-1">${data.title}</h3><p class="text-xs text-muted">${lecCount} bài giảng</p></div>
+      <div><h3 class="font-bold text-main line-clamp-1">${data.title}</h3>${subtextHtml}</div>
       <div class="flex gap-2 mt-auto pt-2 border-t border-theme">
-        <button class="btn-secondary !py-1 !px-2 flex-1 text-xs font-bold" onclick="editCourse('${data.id}')">Sửa</button>
+        <button class="btn-secondary !py-1 !px-2 flex-1 text-xs font-bold" onclick="${data.isBundle ? `editBundle('${data.id}')` : `editCourse('${data.id}')`}">Sửa</button>
         <button class="btn-secondary !py-1 !px-2 flex-1 text-xs font-bold text-red-500" onclick="deleteDocHandler('courses', '${data.id}')">Xóa</button>
       </div>
     `;
@@ -295,6 +304,146 @@ document.getElementById('btn-add-course').addEventListener('click', () => {
 });
 document.getElementById('btn-close-modal').addEventListener('click', hideCourseModal);
 document.getElementById('btn-cancel-course').addEventListener('click', hideCourseModal);
+
+// ==========================================
+// Bundle Logic
+// ==========================================
+let editingBundle = null;
+const modalBundle = document.getElementById('modal-bundle');
+
+function showBundleModal() {
+  if (!modalBundle) return;
+  document.body.classList.add('admin-modal-open');
+  modalBundle.classList.remove('hidden');
+  resetAdminEditorScroll(modalBundle);
+  setTimeout(() => modalBundle.classList.remove('opacity-0'), 10);
+}
+
+function hideBundleModal() {
+  if (!modalBundle) return;
+  modalBundle.classList.add('opacity-0');
+  setTimeout(() => {
+    modalBundle.classList.add('hidden');
+    document.body.classList.remove('admin-modal-open');
+  }, 300);
+}
+
+document.getElementById('upload-bundle-thumbnail-input')?.addEventListener('change', async(e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const progressContainer = document.getElementById('bundle-thumbnail-progress');
+  const progressBar = progressContainer.querySelector('div');
+  progressContainer.classList.remove('hidden');
+  const uploadTask = uploadBytesResumable(ref(storage, `course_thumbnails/${Date.now()}_${file.name}`), file);
+  uploadTask.on('state_changed', 
+    (snap) => { progressBar.style.width = (snap.bytesTransferred / snap.totalBytes) * 100 + '%'; },
+    (error) => { showToast("Lỗi tải ảnh", true); progressContainer.classList.add('hidden'); },
+    async () => {
+      document.getElementById('bundle-thumbnail').value = await getDownloadURL(uploadTask.snapshot.ref);
+      showToast("Tải ảnh xong");
+      progressContainer.classList.add('hidden');
+      if (window.editingBundle) window.editingBundle.thumbnailUrl = document.getElementById('bundle-thumbnail').value;
+    }
+  );
+});
+
+function renderBundleCourseCheckboxes() {
+  const container = document.getElementById('bundle-courses-checkboxes');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const normalCourses = currentCourses.filter(c => !c.isBundle);
+  if (normalCourses.length === 0) {
+    container.innerHTML = '<p class="text-sm text-muted">Chưa có khóa học nhỏ nào. Hãy tạo khóa học thường trước.</p>';
+    return;
+  }
+  
+  normalCourses.forEach(course => {
+    const isChecked = editingBundle.subCourseIds && editingBundle.subCourseIds.includes(course.id);
+    const div = document.createElement('label');
+    div.className = 'flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-theme cursor-pointer hover:border-primary/50 transition-colors';
+    div.innerHTML = `
+      <input type="checkbox" class="w-4 h-4 accent-primary bundle-course-checkbox" value="${course.id}" ${isChecked ? 'checked' : ''}>
+      <img src="${course.thumbnailUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop'}" class="w-12 h-12 object-cover rounded-lg shrink-0">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-bold text-main line-clamp-1">${course.title}</p>
+        <p class="text-[10px] text-muted">${course.isFree ? 'Miễn phí' : 'Trả phí'}</p>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+window.editBundle = (id) => {
+  const bundle = currentCourses.find(c => c.id === id);
+  if (!bundle) return;
+  editingBundle = JSON.parse(JSON.stringify(bundle));
+  if (!editingBundle.subCourseIds) editingBundle.subCourseIds = [];
+  window.editingBundle = editingBundle;
+  document.getElementById('modal-bundle-title').textContent = "Chỉnh Sửa Khóa Học Lớn";
+  document.getElementById('bundle-name').value = editingBundle.title || "";
+  document.getElementById('bundle-thumbnail').value = editingBundle.thumbnailUrl || "";
+  document.getElementById('bundle-is-free').checked = editingBundle.isFree === true;
+  renderBundleCourseCheckboxes();
+  showBundleModal();
+};
+
+document.getElementById('btn-add-bundle')?.addEventListener('click', () => {
+  editingBundle = { title: "", thumbnailUrl: "", isFree: false, isBundle: true, subCourseIds: [] };
+  window.editingBundle = editingBundle;
+  document.getElementById('modal-bundle-title').textContent = "Thêm Khóa Học Lớn";
+  document.getElementById('bundle-name').value = "";
+  document.getElementById('bundle-thumbnail').value = "";
+  document.getElementById('bundle-is-free').checked = false;
+  renderBundleCourseCheckboxes();
+  showBundleModal();
+});
+
+document.getElementById('btn-close-bundle-modal')?.addEventListener('click', hideBundleModal);
+document.getElementById('btn-cancel-bundle')?.addEventListener('click', hideBundleModal);
+
+document.getElementById('btn-save-bundle')?.addEventListener('click', async (e) => {
+  try {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang lưu...`;
+    lucide.createIcons();
+    
+    window.editingBundle.title = document.getElementById('bundle-name').value || "Khóa học lớn chưa đặt tên";
+    window.editingBundle.thumbnailUrl = document.getElementById('bundle-thumbnail').value;
+    window.editingBundle.isFree = document.getElementById('bundle-is-free').checked;
+    
+    const selectedCheckboxes = document.querySelectorAll('.bundle-course-checkbox:checked');
+    window.editingBundle.subCourseIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    const payload = { 
+      title: window.editingBundle.title, 
+      thumbnailUrl: window.editingBundle.thumbnailUrl, 
+      isFree: window.editingBundle.isFree,
+      isBundle: true,
+      subCourseIds: window.editingBundle.subCourseIds, 
+      updatedAt: new Date().toISOString() 
+    };
+    
+    if(window.editingBundle.id) {
+      await updateDoc(doc(db, "courses", window.editingBundle.id), payload);
+    } else { 
+      payload.createdAt = new Date().toISOString(); 
+      await addDoc(collection(db, "courses"), payload); 
+    }
+    
+    showToast("Đã lưu khóa học lớn thành công!");
+    hideBundleModal();
+    loadCourses();
+  } catch (error) {
+    console.error("Lỗi khi lưu khóa học lớn:", error);
+    showToast("Có lỗi xảy ra khi lưu! Xem console.", true);
+  } finally {
+    const btn = document.getElementById('btn-save-bundle');
+    btn.disabled = false;
+    btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Lưu Khóa Học Lớn`;
+    lucide.createIcons();
+  }
+});
 
 function renderTopicsEditor() {
   const container = document.getElementById('topics-editor-container');
