@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="css/styles.css?v=admin-modal-fix-20260429">
-  <script type="module" src="js/admin.js?v=free-course-20260429"></script>
+  <script type="module" src="js/admin.js?v=news-links-cleanup-20260430"></script>
   <script type="module" src="js/admin-exams.js?v=admin-modal-fix-20260429"></script>
 </head>
 <body class="fade-in pb-20 transition-colors duration-300">
@@ -59,7 +59,7 @@
       <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="docs-tab">
         <i data-lucide="folder-down" class="w-4 h-4 inline-block mr-1"></i> Tài liệu
       </button>
-      <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="discovery-tab">
+      <button class="hidden admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="discovery-tab">
         <i data-lucide="compass" class="w-4 h-4 inline-block mr-1"></i> Khám phá
       </button>
       <button class="admin-tab text-muted font-medium px-4 py-2 hover:text-main" data-target="qa-tab">
@@ -240,6 +240,7 @@
           <form id="form-news" class="space-y-4">
             <input type="text" id="news-title" class="input-glass" placeholder="Tiêu đề bài viết..." required>
             <input type="text" id="news-image" class="input-glass" placeholder="URL Ảnh bìa (tùy chọn)">
+            <input type="text" id="news-link" class="input-glass" placeholder="Link bài viết / bài báo (tùy chọn)">
             <textarea id="news-content" rows="6" class="input-glass" placeholder="Nội dung bài viết..." required></textarea>
             <button type="submit" class="btn-primary w-full flex justify-center items-center gap-2">Đăng bài</button>
           </form>
@@ -296,7 +297,7 @@
     <!-- ========================================== -->
     <!-- 6. Discovery Tab -->
     <!-- ========================================== -->
-    <div id="discovery-tab" class="tab-content hidden fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div id="discovery-tab" class="tab-content hidden fade-in grid-cols-1 lg:grid-cols-3 gap-8">
       <div class="lg:col-span-1 space-y-6">
         <div class="glass-card p-6 bg-card">
           <h2 class="text-lg font-bold mb-4 text-main">Thêm Khám Phá</h2>
