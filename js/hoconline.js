@@ -174,7 +174,6 @@ window.changeMainView = (viewId, element = null) => {
     // Load contextual data
     if(viewId === 'view-news') loadNews();
     if(viewId === 'view-docs') loadDocs();
-    if(viewId === 'view-discovery') loadDiscovery();
     if(viewId === 'view-qa') loadQA();
     if(viewId === 'view-dashboard') renderCourseGrid();
     if(viewId === 'view-profile') loadProfile();
@@ -848,6 +847,7 @@ let approxVideoClock = Date.now();
 let youtubeMaskTimer = null;
 let ytApiInitTimer = null;
 let playerControlsHideTimer = null;
+let pseudoVideoPlaceholder = null;
 
 function setApproxVideoSeconds(seconds) {
   approxVideoSeconds = Math.max(0, Number(seconds) || 0);
@@ -922,6 +922,84 @@ function isVideoPlayerFullscreen() {
   return document.fullscreenElement === shell || !!shell?.classList.contains('video-pseudo-fullscreen');
 }
 
+function shouldUsePseudoVideoFullscreen() {
+  const touchLike = window.matchMedia?.('(hover: none), (pointer: coarse), (max-width: 768px)')?.matches;
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+  return !!(touchLike || mobileUA);
+}
+
+function updatePseudoVideoViewport() {
+  const shell = getVideoPlayerShell();
+  if (!shell) return;
+  const viewport = window.visualViewport;
+  const width = Math.round(viewport?.width || window.innerWidth || document.documentElement.clientWidth || 0);
+  const height = Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight || 0);
+  const offsetLeft = Math.round(viewport?.offsetLeft || 0);
+  const offsetTop = Math.round(viewport?.offsetTop || 0);
+  if (width) shell.style.setProperty('--video-vw', `${width}px`);
+  if (height) shell.style.setProperty('--video-vh', `${height}px`);
+  shell.style.setProperty('--video-vx', `${offsetLeft}px`);
+  shell.style.setProperty('--video-vy', `${offsetTop}px`);
+  if (width && height) {
+    const frameMargin = width > height && height <= 520 ? 12 : 16;
+    const maxBoxWidth = Math.max(220, width - frameMargin);
+    const maxBoxHeight = Math.max(160, height - frameMargin);
+    const ratio = 16 / 9;
+    let boxWidth = maxBoxWidth;
+    let boxHeight = boxWidth / ratio;
+    if (boxHeight > maxBoxHeight) {
+      boxHeight = maxBoxHeight;
+      boxWidth = boxHeight * ratio;
+    }
+    shell.style.setProperty('--video-box-w', `${Math.floor(boxWidth)}px`);
+    shell.style.setProperty('--video-box-h', `${Math.floor(boxHeight)}px`);
+  }
+}
+
+function movePseudoVideoShellToBody(shell) {
+  if (!shell || shell.parentElement === document.body) return;
+  pseudoVideoPlaceholder = document.createComment('video-player-shell-placeholder');
+  shell.parentNode.insertBefore(pseudoVideoPlaceholder, shell);
+  document.body.appendChild(shell);
+}
+
+function restorePseudoVideoShell(shell) {
+  if (!shell || !pseudoVideoPlaceholder) return;
+  const parent = pseudoVideoPlaceholder.parentNode;
+  if (parent) parent.insertBefore(shell, pseudoVideoPlaceholder);
+  pseudoVideoPlaceholder.remove();
+  pseudoVideoPlaceholder = null;
+}
+
+function enterPseudoVideoFullscreen(shell, container) {
+  movePseudoVideoShellToBody(shell);
+  updatePseudoVideoViewport();
+  shell.classList.add('video-pseudo-fullscreen');
+  document.body.classList.add('video-fullscreen-active');
+  showTemporaryYouTubeMask(12000);
+  try {
+    window.scrollTo(0, 0);
+    document.getElementById('main-views-container')?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  } catch(e) {}
+}
+
+function exitPseudoVideoFullscreen(shell, container) {
+  restorePseudoVideoShell(shell);
+  shell?.classList.remove('video-pseudo-fullscreen');
+  container?.classList.remove('youtube-mask-visible');
+  shell?.style.removeProperty('--video-vw');
+  shell?.style.removeProperty('--video-vh');
+  shell?.style.removeProperty('--video-vx');
+  shell?.style.removeProperty('--video-vy');
+  shell?.style.removeProperty('--video-box-w');
+  shell?.style.removeProperty('--video-box-h');
+}
+
+function refreshVideoFullscreenLayout(maskDuration = 2600) {
+  updatePseudoVideoViewport();
+  if (isVideoPlayerFullscreen()) showTemporaryYouTubeMask(maskDuration);
+}
+
 function updateFullscreenIcon() {
   const icon = document.getElementById('ctrl-fullscreen-icon');
   document.body.classList.toggle('video-fullscreen-active', isVideoPlayerFullscreen());
@@ -937,33 +1015,49 @@ async function toggleVideoFullscreen() {
   try {
     if (isVideoPlayerFullscreen()) {
       if (document.fullscreenElement === shell && document.exitFullscreen) await document.exitFullscreen();
-      shell.classList.remove('video-pseudo-fullscreen');
+      exitPseudoVideoFullscreen(shell, container);
+    } else if (shouldUsePseudoVideoFullscreen()) {
+      enterPseudoVideoFullscreen(shell, container);
     } else if (shell.requestFullscreen) {
       await shell.requestFullscreen();
       container?.classList.add('youtube-mask-visible');
       showTemporaryYouTubeMask(12000);
     } else {
-      shell.classList.add('video-pseudo-fullscreen');
-      container?.classList.add('youtube-mask-visible');
-      showTemporaryYouTubeMask(12000);
+      enterPseudoVideoFullscreen(shell, container);
     }
   } catch(e) {
-    shell.classList.add('video-pseudo-fullscreen');
-    container?.classList.add('youtube-mask-visible');
-    showTemporaryYouTubeMask(12000);
+    enterPseudoVideoFullscreen(shell, container);
   }
   updateFullscreenIcon();
+}
+
+window.addEventListener('resize', () => {
+  refreshVideoFullscreenLayout(2400);
+}, { passive: true });
+
+window.addEventListener('orientationchange', () => {
+  [0, 80, 180, 360, 700, 1200].forEach(delay => {
+    setTimeout(() => refreshVideoFullscreenLayout(delay < 700 ? 3600 : 2200), delay);
+  });
+}, { passive: true });
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => refreshVideoFullscreenLayout(2400), { passive: true });
+  window.visualViewport.addEventListener('scroll', () => refreshVideoFullscreenLayout(1800), { passive: true });
 }
 
 function showTemporaryYouTubeMask(duration = 6500) {
   const container = document.getElementById('video-container-wrap');
   if (!container) return;
+  const touchLike = window.matchMedia?.('(hover: none), (pointer: coarse), (max-width: 768px)')?.matches;
+  const resolvedDuration = touchLike
+    ? Math.max(1600, Math.min(duration, isVideoPlayerFullscreen() ? 5200 : 4200))
+    : duration;
   container.classList.add('youtube-mask-visible');
   clearTimeout(youtubeMaskTimer);
   youtubeMaskTimer = setTimeout(() => {
-    if (isVideoPlayerFullscreen()) return;
     container.classList.remove('youtube-mask-visible');
-  }, duration);
+  }, resolvedDuration);
 }
 
 function postYouTubeCommand(func, args = []) {
@@ -1331,23 +1425,47 @@ function extractYouTubeID(url) {
 // ----------------------------------------------------
 // MULTI-FEATURES LOADERS (News, Docs, Discovery, QA)
 // ----------------------------------------------------
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function normalizeExternalUrl(url = '') {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
 async function loadNews() {
-  const c = document.getElementById('news-grid'); c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
+  const c = document.getElementById('news-grid');
+  if (!c) return;
+  c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
   const snap = await getDocs(collection(db, "news")); c.innerHTML = '';
   if(snap.empty) { c.innerHTML = '<p class="text-muted">Chưa có tin tức.</p>'; return; }
   snap.forEach(d => {
     const data = d.data();
+    const articleUrl = normalizeExternalUrl(data.articleUrl || data.link || data.url || '');
+    const safeArticleUrl = escapeHtml(articleUrl);
+    const safeTitle = escapeHtml(data.title || '');
+    const safeContent = escapeHtml(data.content || '');
+    const safeImage = escapeHtml(data.imageUrl || '');
     c.innerHTML += `
       <div class="glass-card bg-card p-0 rounded-2xl overflow-hidden shadow-md hover:-translate-y-1 transition-transform border border-theme">
-        ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full h-40 object-cover">` : '<div class="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"></div>'}
+        ${safeImage ? `<img src="${safeImage}" class="w-full h-40 object-cover" alt="">` : '<div class="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"></div>'}
         <div class="p-5">
           <p class="text-[10px] text-muted font-bold uppercase mb-2">${new Date(data.createdAt).toLocaleDateString('vi-VN')}</p>
-          <h3 class="font-bold text-main text-lg mb-2 line-clamp-2">${data.title}</h3>
-          <p class="text-sm text-muted line-clamp-3">${data.content}</p>
+          <h3 class="font-bold text-main text-lg mb-2 line-clamp-2">${safeTitle}</h3>
+          <p class="text-sm text-muted line-clamp-3">${safeContent}</p>
+          ${safeArticleUrl ? `<a href="${safeArticleUrl}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-red-500 hover:underline"><i data-lucide="external-link" class="w-4 h-4"></i> Đọc bài viết</a>` : ''}
         </div>
       </div>
     `;
   });
+  lucide.createIcons({ root: c });
 }
 
 let allDocuments = [];
@@ -1434,7 +1552,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function loadDiscovery() {
-  const c = document.getElementById('discovery-grid'); c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
+  const c = document.getElementById('discovery-grid');
+  if (!c) return;
+  c.innerHTML = '<div class="loader mx-auto col-span-full"></div>';
   const snap = await getDocs(collection(db, "discovery")); c.innerHTML = '';
   if(snap.empty) { c.innerHTML = '<p class="text-muted">Chưa có nội dung.</p>'; return; }
   snap.forEach(d => {
@@ -2321,9 +2441,10 @@ function initCustomPlayerControls() {
   document.addEventListener('fullscreenchange', () => {
     updateFullscreenIcon();
     if (isVideoPlayerFullscreen()) {
-      document.getElementById('video-container-wrap')?.classList.add('youtube-mask-visible');
+      refreshVideoFullscreenLayout(4200);
     } else {
       document.getElementById('video-container-wrap')?.classList.remove('youtube-mask-visible');
+      restorePseudoVideoShell(getVideoPlayerShell());
     }
   });
 

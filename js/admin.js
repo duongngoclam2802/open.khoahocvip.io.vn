@@ -100,6 +100,12 @@ function showToast(msg, isError = false) {
   setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
 }
 
+function normalizeAdminUrl(url = '') {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
 // Tabs Logic
 document.querySelectorAll('.admin-tab').forEach(tab => {
   tab.addEventListener('click', (e) => {
@@ -124,7 +130,6 @@ async function loadData() {
     loadCourses().catch(e => console.error("Lỗi tải Courses:", e)),
     loadNews().catch(e => console.error("Lỗi tải News:", e)),
     loadDocs().catch(e => console.error("Lỗi tải Docs:", e)),
-    loadDiscovery().catch(e => console.error("Lỗi tải Discovery:", e)),
     loadQA().catch(e => console.error("Lỗi tải QA:", e))
   ]);
 }
@@ -467,6 +472,7 @@ async function loadNews() {
   container.innerHTML = '';
   snap.forEach(d => {
     const data = d.data();
+    const articleUrl = data.articleUrl || data.link || data.url || '';
     const div = document.createElement('div');
     div.className = 'glass-card bg-card p-4 rounded-xl border border-theme flex gap-4';
     div.innerHTML = `
@@ -474,6 +480,7 @@ async function loadNews() {
       <div class="flex-1">
         <h4 class="font-bold text-main text-sm">${data.title}</h4>
         <p class="text-xs text-muted mb-2">${new Date(data.createdAt).toLocaleDateString()}</p>
+        ${articleUrl ? `<a href="${articleUrl}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-500 font-bold hover:underline mr-3">Mở link</a>` : ''}
         <button class="text-red-500 text-xs font-bold" onclick="deleteDocHandler('news', '${d.id}')">Xóa</button>
       </div>
     `;
@@ -486,6 +493,7 @@ document.getElementById('form-news').addEventListener('submit', async(e) => {
   const payload = {
     title: document.getElementById('news-title').value,
     imageUrl: document.getElementById('news-image').value,
+    articleUrl: normalizeAdminUrl(document.getElementById('news-link')?.value || ''),
     content: document.getElementById('news-content').value,
     createdAt: new Date().toISOString()
   };
@@ -554,6 +562,7 @@ document.getElementById('form-doc').addEventListener('submit', async(e) => {
 // ==========================================
 async function loadDiscovery() {
   const container = document.getElementById('discovery-container');
+  if (!container) return;
   const snap = await getDocs(collection(db, "discovery"));
   container.innerHTML = '';
   snap.forEach(d => {
@@ -573,7 +582,8 @@ async function loadDiscovery() {
   });
   lucide.createIcons();
 }
-document.getElementById('form-discovery').addEventListener('submit', async(e) => {
+const formDiscovery = document.getElementById('form-discovery');
+if (formDiscovery) formDiscovery.addEventListener('submit', async(e) => {
   e.preventDefault();
   await addDoc(collection(db, "discovery"), {
     title: document.getElementById('discovery-title').value,
@@ -1410,7 +1420,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-
-
-
-
