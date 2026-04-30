@@ -671,6 +671,7 @@ input[type="date"].input-glass::-webkit-calendar-picker-indicator {
   width: 100%;
 }
 .video-player-shell:fullscreen,
+.video-player-shell.video-native-fullscreen,
 .video-player-shell.video-pseudo-fullscreen {
   position: fixed;
   inset: 0;
@@ -686,6 +687,7 @@ input[type="date"].input-glass::-webkit-calendar-picker-indicator {
   gap: 12px;
 }
 .video-player-shell:fullscreen .video-container,
+.video-player-shell.video-native-fullscreen .video-container,
 .video-player-shell.video-pseudo-fullscreen .video-container {
   width: min(100%, 150vh);
   max-width: 100%;
@@ -694,11 +696,13 @@ input[type="date"].input-glass::-webkit-calendar-picker-indicator {
   box-shadow: none !important;
 }
 .video-player-shell:fullscreen .custom-player-overlay,
+.video-player-shell.video-native-fullscreen .custom-player-overlay,
 .video-player-shell.video-pseudo-fullscreen .custom-player-overlay {
   flex: none;
   margin-bottom: 0 !important;
 }
 .video-player-shell:fullscreen .youtube-chrome-mask,
+.video-player-shell.video-native-fullscreen .youtube-chrome-mask,
 .video-player-shell.video-pseudo-fullscreen .youtube-chrome-mask {
   height: 124px;
 }
@@ -3382,10 +3386,12 @@ button, a, input, select, textarea {
   z-index: 320;
 }
 .video-player-shell:fullscreen .custom-player-overlay,
+.video-player-shell.video-native-fullscreen .custom-player-overlay,
 .video-player-shell.video-pseudo-fullscreen .custom-player-overlay {
   z-index: 10020;
 }
 .video-player-shell:fullscreen .speed-menu,
+.video-player-shell.video-native-fullscreen .speed-menu,
 .video-player-shell.video-pseudo-fullscreen .speed-menu {
   z-index: 10030;
 }
@@ -3394,6 +3400,7 @@ button, a, input, select, textarea {
 }
 body.video-fullscreen-active *,
 .video-player-shell:fullscreen *,
+.video-player-shell.video-native-fullscreen *,
 .video-player-shell.video-pseudo-fullscreen * {
   cursor: auto !important;
 }
@@ -3402,6 +3409,7 @@ body.video-fullscreen-active .player-ctrl-btn,
 body.video-fullscreen-active .speed-toggle,
 body.video-fullscreen-active .speed-btn,
 .video-player-shell:fullscreen button,
+.video-player-shell.video-native-fullscreen button,
 .video-player-shell.video-pseudo-fullscreen button {
   cursor: pointer !important;
 }
@@ -3450,11 +3458,13 @@ body.video-fullscreen-active #cursor-ring {
   pointer-events: auto;
 }
 .video-player-shell:fullscreen,
+.video-player-shell.video-native-fullscreen,
 .video-player-shell.video-pseudo-fullscreen {
   overflow: hidden;
   touch-action: manipulation;
 }
 .video-player-shell:fullscreen .custom-player-overlay,
+.video-player-shell.video-native-fullscreen .custom-player-overlay,
 .video-player-shell.video-pseudo-fullscreen .custom-player-overlay {
   bottom: max(18px, env(safe-area-inset-bottom, 0px));
 }
@@ -3471,10 +3481,12 @@ body.video-fullscreen-active #main-views-container {
     bottom: max(10px, env(safe-area-inset-bottom, 0px));
   }
   .video-player-shell:fullscreen,
+  .video-player-shell.video-native-fullscreen,
   .video-player-shell.video-pseudo-fullscreen {
     padding: max(8px, env(safe-area-inset-top, 0px)) 8px max(8px, env(safe-area-inset-bottom, 0px));
   }
   .video-player-shell:fullscreen .video-container,
+  .video-player-shell.video-native-fullscreen .video-container,
   .video-player-shell.video-pseudo-fullscreen .video-container {
     width: 100%;
     max-height: calc(100vh - 92px - env(safe-area-inset-bottom, 0px));
@@ -3505,6 +3517,7 @@ body.video-fullscreen-active #main-views-container {
 }
 
 .video-player-shell:fullscreen,
+.video-player-shell.video-native-fullscreen,
 .video-player-shell.video-pseudo-fullscreen {
   position: fixed !important;
   inset: auto !important;
@@ -3530,7 +3543,8 @@ body.video-fullscreen-active #main-views-container {
 }
 
 @supports (height: 100dvh) {
-  .video-player-shell:fullscreen {
+  .video-player-shell:fullscreen,
+  .video-player-shell.video-native-fullscreen {
     height: 100dvh !important;
     min-height: 100dvh !important;
     max-height: 100dvh !important;
@@ -3543,6 +3557,7 @@ body.video-fullscreen-active #main-views-container {
 }
 
 .video-player-shell:fullscreen .video-container,
+.video-player-shell.video-native-fullscreen .video-container,
 .video-player-shell.video-pseudo-fullscreen .video-container {
   position: relative !important;
   width: min(calc(var(--video-vw, 100vw) - 16px), 1120px) !important;
@@ -3558,11 +3573,13 @@ body.video-fullscreen-active #main-views-container {
 
 @media (orientation: landscape) and (max-height: 520px) {
   .video-player-shell:fullscreen,
+  .video-player-shell.video-native-fullscreen,
   .video-player-shell.video-pseudo-fullscreen {
     padding: max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
   }
 
   .video-player-shell:fullscreen .video-container,
+  .video-player-shell.video-native-fullscreen .video-container,
   .video-player-shell.video-pseudo-fullscreen .video-container {
     width: auto !important;
     height: calc(var(--video-vh, 100vh) - 12px) !important;
@@ -3571,6 +3588,7 @@ body.video-fullscreen-active #main-views-container {
   }
 
   .video-player-shell:fullscreen .custom-player-overlay,
+  .video-player-shell.video-native-fullscreen .custom-player-overlay,
   .video-player-shell.video-pseudo-fullscreen .custom-player-overlay {
     bottom: max(6px, env(safe-area-inset-bottom, 0px));
   }
@@ -3601,6 +3619,7 @@ body.video-fullscreen-active #main-views-container {
   }
 
   .video-player-shell:fullscreen .youtube-chrome-mask,
+  .video-player-shell.video-native-fullscreen .youtube-chrome-mask,
   .video-player-shell.video-pseudo-fullscreen .youtube-chrome-mask {
     height: 72px;
   }
@@ -3626,22 +3645,26 @@ body.video-fullscreen-active #main-views-container {
 }
 
 .video-player-shell:fullscreen .youtube-chrome-mask,
+.video-player-shell.video-native-fullscreen .youtube-chrome-mask,
 .video-player-shell.video-pseudo-fullscreen .youtube-chrome-mask {
   opacity: 0;
 }
 
 .video-player-shell:fullscreen .video-container.youtube-mask-visible .youtube-chrome-mask,
+.video-player-shell.video-native-fullscreen .video-container.youtube-mask-visible .youtube-chrome-mask,
 .video-player-shell.video-pseudo-fullscreen .video-container.youtube-mask-visible .youtube-chrome-mask {
   opacity: 1;
 }
 
 /* Desktop fullscreen should fill the screen much more aggressively */
 @media (hover: hover) and (pointer: fine) {
-  .video-player-shell:fullscreen {
+  .video-player-shell:fullscreen,
+  .video-player-shell.video-native-fullscreen {
     padding: 6px !important;
   }
 
-  .video-player-shell:fullscreen .video-container {
+  .video-player-shell:fullscreen .video-container,
+  .video-player-shell.video-native-fullscreen .video-container {
     width: min(calc(100vw - 12px), 175vh) !important;
     max-width: calc(100vw - 12px) !important;
     max-height: calc(100vh - 12px) !important;
@@ -3649,7 +3672,8 @@ body.video-fullscreen-active #main-views-container {
   }
 
   @supports (height: 100dvh) {
-    .video-player-shell:fullscreen .video-container {
+    .video-player-shell:fullscreen .video-container,
+    .video-player-shell.video-native-fullscreen .video-container {
       width: min(calc(100vw - 12px), 175dvh) !important;
       max-height: calc(100dvh - 12px) !important;
     }
@@ -3685,6 +3709,7 @@ body.video-fullscreen-active #main-views-container {
   }
 
   .video-player-shell:fullscreen,
+  .video-player-shell.video-native-fullscreen,
   .video-player-shell.video-pseudo-fullscreen {
     gap: 8px !important;
   }

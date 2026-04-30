@@ -917,15 +917,78 @@ function getVideoPlayerShell() {
   return document.getElementById('video-player-shell');
 }
 
-function isVideoPlayerFullscreen() {
-  const shell = getVideoPlayerShell();
-  return document.fullscreenElement === shell || !!shell?.classList.contains('video-pseudo-fullscreen');
+function getNativeVideoFullscreenElement() {
+  return document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.mozFullScreenElement
+    || document.msFullscreenElement
+    || null;
 }
 
-function shouldUsePseudoVideoFullscreen() {
-  const touchLike = window.matchMedia?.('(hover: none), (pointer: coarse), (max-width: 768px)')?.matches;
-  const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
-  return !!(touchLike || mobileUA);
+function canRequestNativeVideoFullscreen(shell) {
+  return !!(shell && (
+    shell.requestFullscreen
+    || shell.webkitRequestFullscreen
+    || shell.mozRequestFullScreen
+    || shell.msRequestFullscreen
+  ));
+}
+
+async function didEnterNativeVideoFullscreen(shell) {
+  if (getNativeVideoFullscreenElement() === shell) return true;
+  await new Promise(resolve => setTimeout(resolve, 80));
+  return getNativeVideoFullscreenElement() === shell;
+}
+
+function isVideoPlayerFullscreen() {
+  const shell = getVideoPlayerShell();
+  return getNativeVideoFullscreenElement() === shell || !!shell?.classList.contains('video-pseudo-fullscreen');
+}
+
+async function requestNativeVideoFullscreen(shell) {
+  if (!canRequestNativeVideoFullscreen(shell)) return false;
+  shell.classList.add('video-native-fullscreen');
+  updatePseudoVideoViewport();
+  try {
+    if (shell.requestFullscreen) {
+      try {
+        await shell.requestFullscreen({ navigationUI: 'hide' });
+      } catch(optionsError) {
+        await shell.requestFullscreen();
+      }
+    } else if (shell.webkitRequestFullscreen) {
+      const result = shell.webkitRequestFullscreen();
+      if (result?.then) await result;
+    } else if (shell.mozRequestFullScreen) {
+      const result = shell.mozRequestFullScreen();
+      if (result?.then) await result;
+    } else if (shell.msRequestFullscreen) {
+      const result = shell.msRequestFullscreen();
+      if (result?.then) await result;
+    }
+    const entered = await didEnterNativeVideoFullscreen(shell);
+    if (!entered) shell.classList.remove('video-native-fullscreen');
+    return entered;
+  } catch(e) {
+    shell.classList.remove('video-native-fullscreen');
+    return false;
+  }
+}
+
+async function exitNativeVideoFullscreen(shell) {
+  if (getNativeVideoFullscreenElement() !== shell) return;
+  if (document.exitFullscreen) {
+    await document.exitFullscreen();
+  } else if (document.webkitExitFullscreen) {
+    const result = document.webkitExitFullscreen();
+    if (result?.then) await result;
+  } else if (document.mozCancelFullScreen) {
+    const result = document.mozCancelFullScreen();
+    if (result?.then) await result;
+  } else if (document.msExitFullscreen) {
+    const result = document.msExitFullscreen();
+    if (result?.then) await result;
+  }
 }
 
 function updatePseudoVideoViewport() {
@@ -1014,18 +1077,21 @@ async function toggleVideoFullscreen() {
   if (!shell) return;
   try {
     if (isVideoPlayerFullscreen()) {
-      if (document.fullscreenElement === shell && document.exitFullscreen) await document.exitFullscreen();
+      await exitNativeVideoFullscreen(shell);
       exitPseudoVideoFullscreen(shell, container);
-    } else if (shouldUsePseudoVideoFullscreen()) {
-      enterPseudoVideoFullscreen(shell, container);
-    } else if (shell.requestFullscreen) {
-      await shell.requestFullscreen();
-      container?.classList.add('youtube-mask-visible');
-      showTemporaryYouTubeMask(12000);
     } else {
-      enterPseudoVideoFullscreen(shell, container);
+      const enteredNative = await requestNativeVideoFullscreen(shell);
+      if (enteredNative) {
+        container?.classList.add('youtube-mask-visible');
+        document.body.classList.add('video-fullscreen-active');
+        showTemporaryYouTubeMask(12000);
+        refreshVideoFullscreenLayout(4200);
+      } else {
+        enterPseudoVideoFullscreen(shell, container);
+      }
     }
   } catch(e) {
+    shell.classList.remove('video-native-fullscreen');
     enterPseudoVideoFullscreen(shell, container);
   }
   updateFullscreenIcon();
@@ -2438,15 +2504,22 @@ function initCustomPlayerControls() {
     });
   }
 
-  document.addEventListener('fullscreenchange', () => {
+  const handleVideoFullscreenChange = () => {
+    const shell = getVideoPlayerShell();
+    const container = document.getElementById('video-container-wrap');
+    shell?.classList.toggle('video-native-fullscreen', getNativeVideoFullscreenElement() === shell);
     updateFullscreenIcon();
     if (isVideoPlayerFullscreen()) {
       refreshVideoFullscreenLayout(4200);
     } else {
-      document.getElementById('video-container-wrap')?.classList.remove('youtube-mask-visible');
-      restorePseudoVideoShell(getVideoPlayerShell());
+      container?.classList.remove('youtube-mask-visible');
+      exitPseudoVideoFullscreen(shell, container);
     }
-  });
+  };
+  document.addEventListener('fullscreenchange', handleVideoFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleVideoFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleVideoFullscreenChange);
+  document.addEventListener('MSFullscreenChange', handleVideoFullscreenChange);
 
   if (ctrlPlay) ctrlPlay.addEventListener('click', () => {
     haptic(10);
