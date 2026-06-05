@@ -1,0 +1,10 @@
+/* style.css — Minimal overrides only; main styles live in index.html <style> block */
+
+/* Extra scrollbar polish for mobile */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.35); border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.6); }
+
+/* Selection color */
+::selection { background: rgba(139,92,246,0.35); color: #fff; }
